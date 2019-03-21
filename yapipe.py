@@ -90,7 +90,7 @@ while True:  # петля
 		print("UNKNOWN OPERATION")
 
 for j in range(8):  # следующая итерация
-	print('*', end=' ')
+	print('*', end=' ', flush=True)
 	time.sleep(0.2)
 
 print("Exiting loop")
