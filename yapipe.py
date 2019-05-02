@@ -8,6 +8,8 @@ class Operation(object):  # базовый класс
 	# каждый потомок обработает столько аргументов, сколько ему предписано
 	ports = {}
 	port = deque()  # Очередь данных
+	other = None
+	otherPort = None
 
 	def sendData(self, portName, value):
 		if (portName in self.ports.keys()):
@@ -22,23 +24,34 @@ class Operation(object):  # базовый класс
 		if (portName in self.ports.keys()):
 			return self.ports[portName].pop()
 		else:
-			pass
+			pass # exception
+		# TODO: do() если есть данные
+
+
+	def Link(self, other, portName):
+		self.other = other
+		self.otherPort = portName
+
+	def sendResult(self, value):
+		self.other.sendData(self.otherPort, value)
 
 # передавать данные между узлами через обьект "дуга", которая будет принимать очередь с результатом последней операции
 
 class Sum(Operation):  # обрабатывает событие суммы
 	def __init__(self, a, b):  # инициализирует объект суммы
+		self.addPort('A')
+		self.addPort('B')
 		self.type = 'SUM'
 		self.operand1 = a
 		self.operand2 = b
 		self.res = None
-
 
 	# поле со списком из двух очередей
 
 	def do(self):  # метод суммы
 		try:
 			self.res = int(self.operand1) + int(self.operand2)
+			self.sendResult(self.res)
 			return self.res
 		except ValueError:
 			print("Wrong data")
