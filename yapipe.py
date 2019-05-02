@@ -6,8 +6,23 @@ from collections import deque
 class Operation(object):  # базовый класс
 	# список портов (очередь для хранения аргументов)
 	# каждый потомок обработает столько аргументов, сколько ему предписано
+	ports = {}
 	port = deque()  # Очередь данных
 
+	def sendData(self, portName, value):
+		if (portName in self.ports.keys()):
+			self.ports[portName].appendleft(value)
+		else:
+			pass
+
+	def addPort(self, portName):
+		self.ports[portName] = deque()
+
+	def getData(self, portName):
+		if (portName in self.ports.keys()):
+			return self.ports[portName].pop()
+		else:
+			pass
 
 # передавать данные между узлами через обьект "дуга", которая будет принимать очередь с результатом последней операции
 
@@ -17,6 +32,7 @@ class Sum(Operation):  # обрабатывает событие суммы
 		self.operand1 = a
 		self.operand2 = b
 		self.res = None
+
 
 	# поле со списком из двух очередей
 
@@ -81,6 +97,14 @@ class YapipeTest(unittest.TestCase):
 		"""Tear down for test"""
 		print("Tear down for [" + self.shortDescription() + "]")
 		print("")
+
+	def test_operation(self):
+		"""Operation test"""
+		op = Operation()
+		op.addPort('A')
+		op.sendData('A', 1)
+		val = op.getData('A')
+		self.assertEqual(1, val)
 
 	def test_sum(self):
 		"""Sum test"""
