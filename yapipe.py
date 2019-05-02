@@ -3,7 +3,7 @@ import unittest
 from collections import deque
 
 
-class Event(object):  # базовый класс
+class Operation(object):  # базовый класс
 	# список портов (очередь для хранения аргументов)
 	# каждый потомок обработает столько аргументов, сколько ему предписано
 	port = deque()  # Очередь данных
@@ -11,7 +11,7 @@ class Event(object):  # базовый класс
 
 # передавать данные между узлами через обьект "дуга", которая будет принимать очередь с результатом последней операции
 
-class Sum(Event):  # обрабатывает событие суммы
+class Sum(Operation):  # обрабатывает событие суммы
 	def __init__(self, a, b):  # инициализирует объект суммы
 		self.type = 'SUM'
 		self.operand1 = a
@@ -30,7 +30,7 @@ class Sum(Event):  # обрабатывает событие суммы
 			print("Wrong Type")
 
 
-class Mul(Event):  # обрабатывает событие умножения
+class Mul(Operation):  # обрабатывает событие умножения
 	def __init__(self, a, b):  # инициализирует объект умножения
 		self.type = 'MUL'
 		self.operand1 = a
@@ -47,7 +47,7 @@ class Mul(Event):  # обрабатывает событие умножения
 			print("Wrong Type")
 
 
-class Concat(Event):  # обрабатывает событие конкатенации
+class Concat(Operation):  # обрабатывает событие конкатенации
 	def __init__(self, a, b):  # инициализирует объект конкатенации
 		self.type = 'CONCAT'
 		self.operand1 = a
@@ -116,7 +116,7 @@ print("")
 obj = None
 A = ''
 while True:  # петля
-	obj = Event()
+	obj = Operation()
 	obj.port.clear()
 	operation_set = []
 
