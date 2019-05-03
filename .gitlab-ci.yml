@@ -1,0 +1,11 @@
+before_script:
+  - apt-get update
+
+stages:
+  - test
+
+test:
+  stage: test
+  image: python:3.7.3
+  script:
+    python basic_tests.py
