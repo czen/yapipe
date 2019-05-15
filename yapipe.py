@@ -9,7 +9,7 @@ class Operation(object):  # базовый класс
 	ports = {}  # Список портов (очередей данных)
 	port = deque()  # Очередь данных
 	other = None
-	otherPort = None
+	otherPort = deque()
 
 	# создает очередь <portname>
 	def add_port(self, portname):
@@ -75,7 +75,7 @@ class Mul(Operation):  # обрабатывает событие умножен�
 		self.operand2 = 0
 		self.res = None
 
-	def do(self,  portname1, portname2):  # метод умножения
+	def do(self, portname1, portname2):  # метод умножения
 		operand1 = self.get_data(portname1)
 		operand2 = self.get_data(portname2)
 		val = operand1 * operand2
@@ -91,10 +91,10 @@ class Concat(Operation):  # обрабатывает событие конкат
 		self.operand2 = 0
 		self.res = None
 
-	def do(self,  portname1, portname2):  # метод клнкатенации
+	def do(self, portname1, portname2):  # метод клнкатенации
 		operand1 = self.get_data(portname1)
 		operand2 = self.get_data(portname2)
-		val = operand1 + operand2
+		val = str(operand1) + str(operand2)
 		self.send_result(val)
 
 
@@ -160,14 +160,14 @@ class YapipeTest(unittest.TestCase):
 		testobj2.add_port('R')
 		testobj.add_port('A')
 		testobj.add_port('B')
-		testobj.send_data('A', 1)
-		testobj.send_data('B', 2)
+		testobj.send_data('A', "ya")
+		testobj.send_data('B', "pipe")
 		testobj.link(testobj2, 'R')
 		testobj.do('A', 'B')
-		self.assertEqual(3, testobj2.get_data('R'))
+		self.assertEqual("yapipe", testobj2.get_data('R'))
 
 
-# список с метками операций
+# список с символами операций
 operation_list = ['+', '*', 'CONCAT', 'concat', 'Concat', 'CON', 'Con', 'con']
 
 # запуск тестов
@@ -176,75 +176,121 @@ if __name__ == '__main__':
 	time.sleep(0.5)
 print("")
 
-obj = None
-A = ''
+# obj = None
+# A = ''
 while True:  # цикл ввода и действий
+	print("getting started")
+	print("input the operation(node)")
 
-	obj = Operation()
-	obj.port.clear()
-	operation_set = []
+	meta_operation = input()  # получение очередной операции
+	if meta_operation == 'end':
+		break
 
-	# Вод операндов
-	print("input a queue of arguments (input 'end' to stop):")
-	ch = True
-	while ch:
-		ch = input()
-		if ch:
-			obj.port.append(ch)
-		if ch == "end":
-			print("Exiting loop")
-			exit()
-	print("port = ", obj.port)
+	# создание узла, соответствующего операции
+	if meta_operation in operation_list:
+		# Sum
+		if meta_operation == '+':
+			obj_first = Sum()
 
-	# ввод списка дуг
+		# Mul
+		if meta_operation == '*':
+			obj_first = Mul()
+
+		# Concat
+		if meta_operation == 'CONCAT' or 'concat' or 'Concat' or 'CON' or 'Con' or 'con':
+			obj_first = Concat()
+	else:
+		print("UNKNOWN OPERATION")
+	print("Object constructed")
+
+	# чтение из файла
+	i = 0
+	with open("in.txt") as f:
+		for word in f.read().split():
+			print(word, end=' ', flush=True)
+			i += 1
+			if i % 2 == 0:
+				obj_first.send_data('A', word)
+			else:
+				obj_first.send_data('B', word)
+			print(" is added")
+
+	"""
+	print("input next nods")
 	print("Input list of operations(input ' ' to stop input)")
+	operation_set = []
 	ch = True
 	while ch:
 		ch = input()
 		if ch:
 			operation_set.append(ch)
 	print("operation_set = ", operation_set)
-
-	# соотнесение ввода к событию
-	for i in range(0, len(operation_set) - 1):
-		meta_operation = operation_set[i]
-		if meta_operation in operation_list:
-
-			# Sum
-			if meta_operation == '+':
-				try:
-					s = Sum(obj.port.pop(), obj.port.pop())
-					s.do()
-					obj.port.append(s.res)
-					print("Sum = ", s.res)
-				except IndexError:
-					print("not enough operands")
-
-			# Mul
-			if meta_operation == '*':
-				try:
-					m = Mul(obj.port.pop(), obj.port.pop())
-					m.do()
-					obj.port.append(m.res)
-					print("Mul = ", m.res)
-				except IndexError:
-					print("not enough operands")
-
-			# Concat
-			if meta_operation == 'CONCAT' or 'concat' or 'Concat' or 'CON' or 'Con' or 'con':
-				try:
-					c = Concat(obj.port.pop(), obj.port.pop())
-					c.do()
-					obj.port.append(c.res)
-					print("Concat = ", c.res)
-				except IndexError:
-					print("not enough operands")
-
-		else:
-			print("UNKNOWN OPERATION")
-
-	print("")
-	print("port = ", obj.port)
+	"""
+	# obj = Operation()
+	# obj.port.clear()
+	# operation_set = []
+	#
+	# # Вод операндов
+	# print("input a queue of arguments (input 'end' to stop):")
+	# ch = True
+	# while ch:
+	# 	ch = input()
+	# 	if ch:
+	# 		obj.port.append(ch)
+	# 	if ch == "end":
+	# 		print("Exiting loop")
+	# 		exit()
+	# print("port = ", obj.port)
+	#
+	# # ввод списка дуг
+	# print("Input list of operations(input ' ' to stop input)")
+	# ch = True
+	# while ch:
+	# 	ch = input()
+	# 	if ch:
+	# 		operation_set.append(ch)
+	# print("operation_set = ", operation_set)
+	#
+	# # соотнесение ввода к событию
+	# for i in range(0, len(operation_set) - 1):
+	# 	meta_operation = operation_set[i]
+	# 	if meta_operation in operation_list:
+	#
+	# 		# Sum
+	# 		if meta_operation == '+':
+	# 			try:
+	# 				s = Sum(obj.port.pop(), obj.port.pop())
+	# 				s.do()
+	# 				obj.port.append(s.res)
+	# 				print("Sum = ", s.res)
+	# 			except IndexError:
+	# 				print("not enough operands")
+	#
+	# 		# Mul
+	# 		if meta_operation == '*':
+	# 			try:
+	# 				m = Mul(obj.port.pop(), obj.port.pop())
+	# 				m.do()
+	# 				obj.port.append(m.res)
+	# 				print("Mul = ", m.res)
+	# 			except IndexError:
+	# 				print("not enough operands")
+	#
+	# 		# Concat
+	# 		if meta_operation == 'CONCAT' or 'concat' or 'Concat' or 'CON' or 'Con' or 'con':
+	# 			try:
+	# 				c = Concat(obj.port.pop(), obj.port.pop())
+	# 				c.do()
+	# 				obj.port.append(c.res)
+	# 				print("Concat = ", c.res)
+	# 			except IndexError:
+	# 				print("not enough operands")
+	#
+	# 	else:
+	# 		print("UNKNOWN OPERATION")
+	#
+	# print("")
+	# print("port = ", obj.port)
 
 	# f = True
 	# operation_set = []
