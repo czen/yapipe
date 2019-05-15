@@ -6,91 +6,96 @@ from collections import deque
 class Operation(object):  # базовый класс
 	# список портов (очередь для хранения аргументов)
 	# каждый потомок обработает столько аргументов, сколько ему предписано
-	ports = {}
+	ports = {}  # Список портов (очередей данных)
 	port = deque()  # Очередь данных
 	other = None
 	otherPort = None
 
-	def sendData(self, portName, value):
-		if (portName in self.ports.keys()):
-			self.ports[portName].appendleft(value)
+	# создает очередь <portname>
+	def add_port(self, portname):
+		self.ports[portname] = deque()
+
+	# возвращает список портов
+	def get_ports(self):
+		return self.ports
+
+	# добавляет слева значение в очередь <portname>
+	def send_data(self, portname, value):
+		if portname in self.ports.keys():
+			self.ports[portname].appendleft(value)
 		else:
 			pass
 
-	def addPort(self, portName):
-		self.ports[portName] = deque()
-
-	def getData(self, portName):
-		if (portName in self.ports.keys()):
-			return self.ports[portName].pop()
+	# снимает правое (последнее) значение с очереди <portname>
+	def get_data(self, portname):
+		if portname in self.ports.keys():
+			return self.ports[portname].pop()
 		else:
-			pass # exception
-		# TODO: do() если есть данные
+			pass  # exception
 
+	# TODO: do() если есть данные
 
-	def Link(self, other, portName):
+	# определяет следующий узел графа <other> и его очередь <portname>
+	def link(self, other, portname):
 		self.other = other
-		self.otherPort = portName
+		self.otherPort = portname
 
-	def sendResult(self, value):
-		self.other.sendData(self.otherPort, value)
+	# помещает значение в очередь <portname> следующего узла
+	def send_result(self, value):
+		self.other.send_data(self.otherPort, value)
+
 
 # передавать данные между узлами через обьект "дуга", которая будет принимать очередь с результатом последней операции
 
+
 class Sum(Operation):  # обрабатывает событие суммы
-	def __init__(self, a, b):  # инициализирует объект суммы
-		self.addPort('A')
-		self.addPort('B')
+	def __init__(self):  # инициализирует объект суммы
 		self.type = 'SUM'
-		self.operand1 = a
-		self.operand2 = b
+		self.add_port('A')
+		self.add_port('B')
+		self.operand1 = 0
+		self.operand2 = 0
 		self.res = None
 
 	# поле со списком из двух очередей
 
-	def do(self):  # метод суммы
-		try:
-			self.res = int(self.operand1) + int(self.operand2)
-			self.sendResult(self.res)
-			return self.res
-		except ValueError:
-			print("Wrong data")
-		except TypeError:
-			print("Wrong Type")
+	def do(self, portname1, portname2):  # метод суммы
+		operand1 = self.get_data(portname1)
+		operand2 = self.get_data(portname2)
+		val = operand1 + operand2
+		self.send_result(val)
 
 
 class Mul(Operation):  # обрабатывает событие умножения
-	def __init__(self, a, b):  # инициализирует объект умножения
+	def __init__(self):  # инициализирует объект умножения
 		self.type = 'MUL'
-		self.operand1 = a
-		self.operand2 = b
+		self.add_port('A')
+		self.add_port('B')
+		self.operand1 = 0
+		self.operand2 = 0
 		self.res = None
 
-	def do(self):  # метод умножения
-		try:
-			self.res = int(self.operand1) * int(self.operand2)
-			return self.res
-		except ValueError:
-			print("Wrong data")
-		except TypeError:
-			print("Wrong Type")
+	def do(self,  portname1, portname2):  # метод умножения
+		operand1 = self.get_data(portname1)
+		operand2 = self.get_data(portname2)
+		val = operand1 * operand2
+		self.send_result(val)
 
 
 class Concat(Operation):  # обрабатывает событие конкатенации
-	def __init__(self, a, b):  # инициализирует объект конкатенации
-		self.type = 'CONCAT'
-		self.operand1 = a
-		self.operand2 = b
+	def __init__(self):  # инициализирует объект конкатенации
+		self.type = 'CON'
+		self.add_port('A')
+		self.add_port('B')
+		self.operand1 = 0
+		self.operand2 = 0
 		self.res = None
 
-	def do(self):  # метод клнкатенации
-		try:
-			self.res = str(self.operand1) + str(self.operand2)
-			return self.res
-		except ValueError:
-			print("Wrong Value")
-		except TypeError:
-			print("Wrong Type")
+	def do(self,  portname1, portname2):  # метод клнкатенации
+		operand1 = self.get_data(portname1)
+		operand2 = self.get_data(portname2)
+		val = operand1 + operand2
+		self.send_result(val)
 
 
 class YapipeTest(unittest.TestCase):
@@ -114,31 +119,52 @@ class YapipeTest(unittest.TestCase):
 	def test_operation(self):
 		"""Operation test"""
 		op = Operation()
-		op.addPort('A')
-		op.sendData('A', 1)
-		val = op.getData('A')
+		op.add_port('A')
+		op.send_data('A', 1)
+		val = op.get_data('A')
 		self.assertEqual(1, val)
 
 	def test_sum(self):
 		"""Sum test"""
 		print("id: " + self.id())
-		testobj = Sum(1, 2)
-		testobj.do()
-		self.assertEqual(3, testobj.res)
+		testobj = Sum()
+		testobj2 = Sum()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', 1)
+		testobj.send_data('B', 2)
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual(3, testobj2.get_data('R'))
 
 	def test_mul(self):
 		"""Mul test"""
 		print("id: " + self.id())
-		testobj = Mul(1, 3)
-		testobj.do()
-		self.assertEqual(3, testobj.res)
+		testobj = Mul()
+		testobj2 = Mul()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', 2)
+		testobj.send_data('B', 3)
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual(6, testobj2.get_data('R'))
 
 	def test_concat(self):
 		"""Concat test"""
 		print("id: " + self.id())
-		testobj = Concat('ya', 'pipe')
-		testobj.do()
-		self.assertEqual('yapipe', testobj.res)
+		testobj = Concat()
+		testobj2 = Concat()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', 1)
+		testobj.send_data('B', 2)
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual(3, testobj2.get_data('R'))
 
 
 # список с метками операций
@@ -147,12 +173,13 @@ operation_list = ['+', '*', 'CONCAT', 'concat', 'Concat', 'CON', 'Con', 'con']
 # запуск тестов
 if __name__ == '__main__':
 	unittest.main(exit=False)
-	time.sleep(0.2)
+	time.sleep(0.5)
 print("")
 
 obj = None
 A = ''
-while True:  # петля
+while True:  # цикл ввода и действий
+
 	obj = Operation()
 	obj.port.clear()
 	operation_set = []
@@ -179,7 +206,7 @@ while True:  # петля
 	print("operation_set = ", operation_set)
 
 	# соотнесение ввода к событию
-	for i in range(0, len(operation_set)-1):
+	for i in range(0, len(operation_set) - 1):
 		meta_operation = operation_set[i]
 		if meta_operation in operation_list:
 
@@ -268,4 +295,3 @@ while True:  # петля
 		print('*', end=' ', flush=True)
 		time.sleep(0.1)
 	print("")
-
