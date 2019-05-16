@@ -204,28 +204,29 @@ while True:  # цикл ввода и действий
 	print("Object constructed")
 
 	# чтение из файла
-	i = 0
 	with open("in.txt") as f:
-		for word in f.read().split():
-			print(word, end=' ', flush=True)
-			i += 1
-			if i % 2 == 0:
-				obj_first.send_data('A', word)
-			else:
-				obj_first.send_data('B', word)
-			print(" is added")
+		for line in f:
+			line = line.split()
+			try:
+				if line[0] not in obj_first.ports.keys():
+					raise Exception("port doesn't exist")
+				for i in range(1, len(line)):
+					obj_first.send_data(line[0], line[i])
+					print(line[i], " is added to ", line[0])
+			except (AttributeError, Exception):
+				pass
 
 	"""
-	print("input next nods")
-	print("Input list of operations(input ' ' to stop input)")
-	operation_set = []
-	ch = True
-	while ch:
-		ch = input()
-		if ch:
-			operation_set.append(ch)
-	print("operation_set = ", operation_set)
-	"""
+  print("input next nods")
+  print("Input list of operations(input ' ' to stop input)")
+  operation_set = []
+  ch = True
+  while ch:
+    ch = input()
+    if ch:
+      operation_set.append(ch)
+  print("operation_set = ", operation_set)
+  """
 	# obj = Operation()
 	# obj.port.clear()
 	# operation_set = []
