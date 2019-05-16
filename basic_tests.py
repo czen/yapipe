@@ -22,31 +22,52 @@ class YapipeTest(unittest.TestCase):
 	def test_operation(self):
 		"""Operation test"""
 		op = Operation()
-		op.addPort('A')
-		op.sendData('A', 1)
-		val = op.getData('A')
+		op.add_port('A')
+		op.send_data('A', 1)
+		val = op.get_data('A')
 		self.assertEqual(1, val)
 
 	def test_sum(self):
 		"""Sum test"""
 		print("id: " + self.id())
-		testobj = Sum(1, 2)
-		testobj.do()
-		self.assertEqual(3, testobj.res)
+		testobj = Sum()
+		testobj2 = Sum()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', 1)
+		testobj.send_data('B', 2)
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual(3, testobj2.get_data('R'))
 
 	def test_mul(self):
 		"""Mul test"""
 		print("id: " + self.id())
-		testobj = Mul(1, 3)
-		testobj.do()
-		self.assertEqual(3, testobj.res)
+		testobj = Mul()
+		testobj2 = Mul()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', 2)
+		testobj.send_data('B', 3)
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual(6, testobj2.get_data('R'))
 
 	def test_concat(self):
 		"""Concat test"""
 		print("id: " + self.id())
-		testobj = Concat('ya', 'pipe')
-		testobj.do()
-		self.assertEqual('yapipe', testobj.res)
+		testobj = Concat()
+		testobj2 = Concat()
+		testobj2.add_port('R')
+		testobj.add_port('A')
+		testobj.add_port('B')
+		testobj.send_data('A', "ya")
+		testobj.send_data('B', "pipe")
+		testobj.link(testobj2, 'R')
+		testobj.do('A', 'B')
+		self.assertEqual("yapipe", testobj2.get_data('R'))
 
 if __name__ == "__main__":
     # Запуск тестов
