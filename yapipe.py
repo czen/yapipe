@@ -1,6 +1,7 @@
 import time
 from collections import deque
 
+
 class Operation(object):  # базовый класс
 	# список портов (очередь для хранения аргументов)
 	# каждый потомок обработает столько аргументов, сколько ему предписано
@@ -21,7 +22,7 @@ class Operation(object):  # базовый класс
 	def send_data(self, portname, value):
 		if portname in self.ports.keys():
 			self.ports[portname].appendleft(value)
-		else:
+		else:  # TODO: проверить, есть ли порты
 			pass
 
 	# снимает правое (последнее) значение с очереди <portname>
@@ -41,9 +42,6 @@ class Operation(object):  # базовый класс
 	# помещает значение в очередь <portname> следующего узла
 	def send_result(self, value):
 		self.other.send_data(self.otherPort, value)
-
-
-# передавать данные между узлами через обьект "дуга", которая будет принимать очередь с результатом последней операции
 
 
 class Sum(Operation):  # обрабатывает событие суммы
@@ -95,14 +93,14 @@ class Concat(Operation):  # обрабатывает событие конкат
 		val = str(operand1) + str(operand2)
 		self.send_result(val)
 
+
 # список с символами операций
 operation_list = ['+', '*', 'CONCAT', 'concat', 'Concat', 'CON', 'Con', 'con']
 
 if __name__ == '__main__':
 	time.sleep(0.5)
 	print("")
-    # obj = None
-	# A = ''
+
 	while True:  # цикл ввода и действий
 		print("getting started")
 		print("input the operation(node)")
