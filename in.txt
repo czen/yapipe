@@ -1,2 +1,4 @@
-A 10 11 12 13 14
-B 11 12 13 14 15
+term1=10
+term2=5
+multiplier2=2
+string2= yapipe is done!
