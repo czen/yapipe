@@ -1,16 +1,18 @@
+# -*- coding: utf8 -*-
+
 from collections import deque
 
 
 # чтение из файла
-def file_reading():
+def file_reading(input_node):
     with open("in.txt") as f:
         try:
             print("Reading file...", end='')
             i = 1
             for line in f:
                 line = line.split('=')
-                if line[0] in sum_node.ports:
-                    sum_node.send_data(line[0], line[1][0:-1])
+                if line[0] in input_node.ports:
+                    input_node.send_data(line[0], line[1][0:-1])
                     i += 1
             print("Completed")
         except IOError:
@@ -18,11 +20,14 @@ def file_reading():
 
 
 class Operation(object):  # базовый класс
-    ports = {}  # Список портов (очередей данных)
+    #ports = {}  # Список портов (очередей данных)
     # port = deque()  # Очередь данных
     other = None  # Следующий узел
     otherPort = deque()  # порты следующих узлов
 
+    def __init__(self):
+        self.ports = {}
+        
     # создает очередь <portname>
     def _add_port(self, portname):
         self.ports[portname] = deque()
@@ -38,6 +43,8 @@ class Operation(object):  # базовый класс
                 self.ports[portname].appendleft(value)
             else:
                 print("NO PORT WITH NAME: ", portname)
+        # TODO: проверить, можно ли вызвать do() и сделать это, если можно
+        # ...
 
     # снимает правое (последнее) значение с очереди <portname>
     def get_data(self, portname):
@@ -56,6 +63,7 @@ class Operation(object):  # базовый класс
 
 class Sum(Operation):  # обрабатывает событие суммы
     def __init__(self):  # инициализирует объект суммы
+        super(Sum, self).__init__()
         self.type = 'SUM'
         self._add_port('term1')
         self._add_port('term2')
@@ -71,6 +79,7 @@ class Sum(Operation):  # обрабатывает событие суммы
 
 class Mul(Operation):  # обрабатывает событие умножения
     def __init__(self):  # инициализирует объект умножения
+        super(Mul, self).__init__()
         self.type = 'MUL'
         self._add_port('multiplier1')
         self._add_port('multiplier2')
@@ -84,6 +93,7 @@ class Mul(Operation):  # обрабатывает событие умножен�
 
 class Concat(Operation):  # обрабатывает событие конкатенации
     def __init__(self):  # инициализирует объект конкатенации
+        super(Concat, self).__init__()
         self.type = 'CON'
         self._add_port('string1')
         self._add_port('string2')
@@ -97,6 +107,7 @@ class Concat(Operation):  # обрабатывает событие конкат
 
 class Result(Operation):  # обрабатывает событие завершения процесса
     def __init__(self):  # инициализирует завершающий объект
+        super(Result, self).__init__()
         self.type = 'RESULT'
         self._add_port('conclusion')
 
