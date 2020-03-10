@@ -13,20 +13,25 @@ def file_reading(input_node):
                 line = line.split('=')
                 if line[0] in input_node.ports:
                     input_node.send_data(line[0], line[1][0:-1])
-                    i += 1
+                    # Выполнение метода do(), если это возможно
+                    portname = []
+                    if input_node.other is not None:
+                        for i in input_node.get_ports():
+                            print("_TRACE: ", i, "_")
+                            if input_node.get_ports().get(i) != '':
+                                portname.append(input_node.get_ports().get(i))
+                        portname.reverse()
+                        input_node.do(portname.pop(), portname.pop())
             print("Completed")
         except IOError:
             print("FILE ERROR!")
 
 
 class Operation(object):  # базовый класс
-    #ports = {}  # Список портов (очередей данных)
-    # port = deque()  # Очередь данных
-    other = None  # Следующий узел
-    otherPort = deque()  # порты следующих узлов
-
     def __init__(self):
-        self.ports = {}
+        self.ports = {}  # Словарь со всеми портами узла
+        self.other = None  # Следующий узел
+        self.otherPort = deque()  # порт следующего узла, куда передается результат
         
     # создает очередь <portname>
     def _add_port(self, portname):
@@ -44,7 +49,8 @@ class Operation(object):  # базовый класс
             else:
                 print("NO PORT WITH NAME: ", portname)
         # TODO: проверить, можно ли вызвать do() и сделать это, если можно
-        # ...
+        # if self.other is not None and self.otherPort != '':
+        #     self.do()
 
     # снимает правое (последнее) значение с очереди <portname>
     def get_data(self, portname):
@@ -125,23 +131,33 @@ if __name__ == "__main__":
     print("concat_node initialized with operands: ", concat_node.get_ports())
     result_node = Result()
     print("result_node initialized with operands: ", result_node.get_ports())
+
+    print()
     sum_node.link(mul_node, 'multiplier1')
     mul_node.link(concat_node, 'string1')
     concat_node.link(result_node, 'conclusion')
-    file_reading()
+
+    file_reading(sum_node)
+    file_reading(mul_node)
+    file_reading(concat_node)
 
     # tracing
-    print("sum_node's operands: ", sum_node.get_ports())
-    print("mul_node's operands: ", mul_node.get_ports())
-    print("concat_node's operands: ", concat_node.get_ports())
+    print()
+    print("sum_node's operands after file_reading: ", sum_node.get_ports())
+    print("mul_node's operands after file_reading: ", mul_node.get_ports())
+    print("concat_node's operands after file_reading: ", concat_node.get_ports())
+    print("result_node's operands after file_reading: ", result_node.get_ports())
 
     sum_node.do('term1', 'term2')
     mul_node.do('multiplier1', 'multiplier2')
     concat_node.do('string1', 'string2')
 
     # tracing
-    print("sum_node's operands: ", sum_node.get_ports())
-    print("mul_node's operands: ", mul_node.get_ports())
-    print("concat_node's operands: ", concat_node.get_ports())
+    print()
+    print("sum_node's operands after DO: ", sum_node.get_ports())
+    print("mul_node's operands after DO: ", mul_node.get_ports())
+    print("concat_node's operands after DO: ", concat_node.get_ports())
+    print("result_node's operands after DO: ", result_node.get_ports())
 
+    print()
     result_node.do()
