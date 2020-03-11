@@ -4,27 +4,23 @@ from collections import deque
 
 
 # чтение из файла
-def file_reading(input_node):
+def file_reading():
     with open("in.txt") as f:
         try:
             print("Reading file...", end='')
-            i = 1
             for line in f:
                 line = line.split('=')
-                if line[0] in input_node.ports:
-                    input_node.send_data(line[0], line[1][0:-1])
-                    # # Выполнение метода do(), если это возможно
-                    # portname = []
-                    # if input_node.other is not None:
-                    #    for i in input_node.get_ports():
-                    #        print("_TRACE: ", i, "_")
-                    #        if input_node.get_ports().get(i) is not None:
-                    #            portname.append(input_node.get_ports().get(i))
-                    #     portname.reverse()
-                    #     input_node.do(portname.pop(), portname.pop())
+                if line[0] in port_map:
+                    port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
             print("Completed")
         except IOError:
-            print("FILE ERROR!")
+            print("! FILE ERROR !")
+
+
+# port_map = {'A': (sum_node, 'term1'),
+#             'B': (sum_node, 'term2'),
+#             'M': (mul_node, 'multiplier2'),
+#             'C': (concat_node, 'string2')}
 
 
 class Operation(object):  # базовый класс
@@ -41,39 +37,46 @@ class Operation(object):  # базовый класс
     def get_ports(self):
         return self.ports
 
+    # абстрактный метод
     def do(self):
-        raise
+        raise NotImplementedError('! USE OF BASE CLASS METHOD !')
 
-    # добавляет слева значение в очередь <portname>
+    # добавляет (справа) значение в очередь <portname> и выполняет метод do() текущего узла
     def send_data(self, portname, value):
         if portname in self.ports.keys():
             if self.ports[portname] is not None:
                 self.ports[portname].append(value)
             else:
-                print("NO PORT WITH NAME: ", portname)
-        # TODO: проверить, можно ли вызвать do() и сделать это, если можно
-        count = 0
+                print("! NO PORT WITH NAME: ", portname, " !")
+        has_empty = False
         for i in self.ports:
-            if len(self.ports[i]) > 0:
-                count += 1
-            if count == 2:
-                count = 0
-                self.do()
+            if self.ports[i] != portname and len(self.ports[i]) == 0:
+                has_empty = True
+        if not has_empty:
+            self.do()
 
-    # снимает правое (последнее) значение с очереди <portname>
+    # снимает последнее (правое) значение с очереди <portname>
     def get_data(self, portname):
         if portname in self.ports.keys():
             return self.ports[portname].pop()
 
-    # определяет следующий узел графа <other> и его очередь <portname>
+    # указывает следующий узел <other> графа и его очередь <portname>
     def link(self, other, portname):
         self.other = other
         self.otherPort = portname
 
-    # помещает значение в очередь <portname> следующего узла
+    # помещает значение <value> в очередь <portname> следующего узла
     def send_result(self, value):
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
+
+    # переопределение оператора []
+    def __getitem__(self, key):
+        return self.ports[key]
+
+    # def __getattr__(self, key):
+    #     # TODO: добавить проверку, что key не совпадает с output например
+    #     return self[key]
 
 
 class Sum(Operation):  # обрабатывает событие суммы
@@ -130,41 +133,32 @@ class Result(Operation):  # обрабатывает событие заверш
 
 if __name__ == "__main__":
     print()
+    # описание узлов
     sum_node = Sum()
-    print("sum_node initialized with operands: ", sum_node.get_ports())
     mul_node = Mul()
-    print("mul_node initialized with operands: ", mul_node.get_ports())
     concat_node = Concat()
-    print("concat_node initialized with operands: ", concat_node.get_ports())
     result_node = Result()
+    port_map = {'A': (sum_node, 'term1'),
+                'B': (sum_node, 'term2'),
+                'M': (mul_node, 'multiplier2'),
+                'C': (concat_node, 'string2')}
+
+    print("sum_node initialized with operands: ", sum_node.get_ports())
+    print("mul_node initialized with operands: ", mul_node.get_ports())
+    print("concat_node initialized with operands: ", concat_node.get_ports())
     print("result_node initialized with operands: ", result_node.get_ports())
 
-    print()
+    # соединение узлов в граф
     sum_node.link(mul_node, 'multiplier1')
     mul_node.link(concat_node, 'string1')
     concat_node.link(result_node, 'conclusion')
+    # чтение данных из файла в порты узлов и выполнение do()
+    file_reading()
 
-    file_reading(sum_node)
-    file_reading(mul_node)
-    file_reading(concat_node)
-
-    # tracing
-    print()
     print("sum_node's operands after file_reading: ", sum_node.get_ports())
     print("mul_node's operands after file_reading: ", mul_node.get_ports())
     print("concat_node's operands after file_reading: ", concat_node.get_ports())
     print("result_node's operands after file_reading: ", result_node.get_ports())
-
-    # sum_node.do()
-    # mul_node.do()
-    # concat_node.do()
-
-    # tracing
-    print()
-    print("sum_node's operands after DO: ", sum_node.get_ports())
-    print("mul_node's operands after DO: ", mul_node.get_ports())
-    print("concat_node's operands after DO: ", concat_node.get_ports())
-    print("result_node's operands after DO: ", result_node.get_ports())
 
     print()
     result_node.do()

@@ -1,4 +1,4 @@
-term1=10
-term2=5
-multiplier2=2
-string2= yapipe is done!
+A=10
+B=5
+M=2
+C= yapipe is done!
