@@ -17,12 +17,6 @@ def file_reading():
             print("! FILE ERROR !")
 
 
-# port_map = {'A': (sum_node, 'term1'),
-#             'B': (sum_node, 'term2'),
-#             'M': (mul_node, 'multiplier2'),
-#             'C': (concat_node, 'string2')}
-
-
 class Operation(object):  # базовый класс
     def __init__(self):
         self.ports = dict()  # Словарь со всеми портами узла
@@ -65,7 +59,12 @@ class Operation(object):  # базовый класс
         self.other = other
         self.otherPort = portname
 
-    # помещает значение <value> в очередь <portname> следующего узла
+    def __add__(self, other_node):
+        # TODO: sum_node.link(mul_node, 'multiplier1') -> sum_node += mul_node
+        # self.link(other_node, )
+        pass
+
+    # помещает значение <value> в очередь следующего узла (other)
     def send_result(self, value):
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
@@ -74,9 +73,10 @@ class Operation(object):  # базовый класс
     def __getitem__(self, key):
         return self.ports[key]
 
-    # def __getattr__(self, key):
-    #     # TODO: добавить проверку, что key не совпадает с output например
-    #     return self[key]
+    def __getattr__(self, key):
+        # TODO: добавить проверку, что key не совпадает с output например
+        if key not in self.ports:  # ????????????????????????????????????????????
+            return self[key]
 
 
 class Sum(Operation):  # обрабатывает событие суммы
@@ -85,12 +85,13 @@ class Sum(Operation):  # обрабатывает событие суммы
         self.type = 'SUM'
         self._add_port('term1')
         self._add_port('term2')
+        self._add_port('result')
         self.term1 = 0
         self.term2 = 0
 
     def do(self):  # метод суммы
-        val = int(self.get_data('term1')) + int(self.get_data('term2'))
-        self.send_result(val)
+        self['result'] = int(self.get_data('term1')) + int(self.get_data('term2'))
+        self.send_result(self['result'])
 
 
 class Mul(Operation):  # обрабатывает событие умножения
@@ -99,20 +100,22 @@ class Mul(Operation):  # обрабатывает событие умножен�
         self.type = 'MUL'
         self._add_port('multiplier1')
         self._add_port('multiplier2')
+        self._add_port('result')
         self.multiplier1 = 0
         self.multiplier2 = 0
 
     def do(self):  # метод умножения
-        val = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
-        self.send_result(val)
+        self['result'] = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
+        self.send_result(self['result'])
 
 
 class Concat(Operation):  # обрабатывает событие конкатенации
     def __init__(self):  # инициализирует объект конкатенации
         super(Concat, self).__init__()
-        self.type = 'CON'
+        self.type = 'CONCAT'
         self._add_port('string1')
         self._add_port('string2')
+        self._add_port('result')
         self.string1 = 0
         self.string2 = 0
 
@@ -150,6 +153,7 @@ if __name__ == "__main__":
 
     # соединение узлов в граф
     sum_node.link(mul_node, 'multiplier1')
+    #
     mul_node.link(concat_node, 'string1')
     concat_node.link(result_node, 'conclusion')
     # чтение данных из файла в порты узлов и выполнение do()
