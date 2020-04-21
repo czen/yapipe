@@ -64,13 +64,13 @@ class Operation(object):  # базовый класс
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
 
-     # возвращает пару <узел>, <имя порта>
+    # возвращает пару <узел>, <имя порта>
     def get_port(self, key):
         return (self, key)
 
     # <объект класса>.<имя порта> -> (узел, имя порта)
     def __getattr__(self, key):
-        if key in self.ports: 
+        if key in self.ports:
             return self.get_port(key)
 
     # Позволяет вызывать метод link с помощью оператора +=
@@ -87,7 +87,6 @@ class Sum(Operation):  # обрабатывает событие суммы
         self._add_port('term1')
         self._add_port('term2')
         self._add_port('result')
-
 
     def do(self):  # метод суммы
         self['result'] = int(self.get_data('term1')) + int(self.get_data('term2'))
