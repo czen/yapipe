@@ -28,7 +28,7 @@ class Operation(object):  # базовый класс
         self.ports[portname] = deque()
 
     # возвращает список портов
-    def get_ports(self):
+    def get_all_ports(self):
         return self.ports
 
     # абстрактный метод
@@ -59,31 +59,25 @@ class Operation(object):  # базовый класс
         self.other = other
         self.otherPort = portname
 
- def get_port(self, key):
-        # вернем просто пару <узел>, <имя порта>
-        return (self, key)
-
-    # Any attempt to resolve a property, method, 
-    # or field name that doesn't actually exist
-    # on the object itself will be passed to _getattr_.
-    def __getattr__(self, key):
-        #return self.get_port
-        if key in self.ports: 
-            return self.get_port
-
-    def __iadd__(self, other_node):
-        # TODO: sum_node.link(mul_node, 'multiplier1') -> sum_node += mul_node
-        # self.link(other_node, )
-        pass
-
     # помещает значение <value> в очередь следующего узла (other)
     def send_result(self, value):
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
 
-    # переопределение оператора []
-    def __getitem__(self, key):
-        return self.ports[key]
+     # возвращает пару <узел>, <имя порта>
+    def get_port(self, key):
+        return (self, key)
+
+    # <объект класса>.<имя порта> -> (узел, имя порта)
+    def __getattr__(self, key):
+        if key in self.ports: 
+            return self.get_port(key)
+
+    # Позволяет вызывать метод link с помощью оператора +=
+    # <объект класса> += <объект класса>.<имя порта>
+    # sum_node.link(mul_node, 'multiplier1') -> sum_node += mul_node.multiplier1
+    def __iadd__(self, other_node):
+        self.link(other_node[0], other_node[1])
 
 
 class Sum(Operation):  # обрабатывает событие суммы
@@ -93,8 +87,7 @@ class Sum(Operation):  # обрабатывает событие суммы
         self._add_port('term1')
         self._add_port('term2')
         self._add_port('result')
-        self.term1 = 0
-        self.term2 = 0
+
 
     def do(self):  # метод суммы
         self['result'] = int(self.get_data('term1')) + int(self.get_data('term2'))
@@ -108,8 +101,6 @@ class Mul(Operation):  # обрабатывает событие умножен�
         self._add_port('multiplier1')
         self._add_port('multiplier2')
         self._add_port('result')
-        self.multiplier1 = 0
-        self.multiplier2 = 0
 
     def do(self):  # метод умножения
         self['result'] = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
@@ -123,8 +114,6 @@ class Concat(Operation):  # обрабатывает событие конкат
         self._add_port('string1')
         self._add_port('string2')
         self._add_port('result')
-        self.string1 = 0
-        self.string2 = 0
 
     def do(self):  # метод конкатенации
         val = str(self.get_data('string1')) + self.get_data('string2')
@@ -153,23 +142,32 @@ if __name__ == "__main__":
                 'M': (mul_node, 'multiplier2'),
                 'C': (concat_node, 'string2')}
 
-    print("sum_node initialized with operands: ", sum_node.get_ports())
-    print("mul_node initialized with operands: ", mul_node.get_ports())
-    print("concat_node initialized with operands: ", concat_node.get_ports())
-    print("result_node initialized with operands: ", result_node.get_ports())
+    print("sum_node initialized with operands: ", sum_node.get_all_ports())
+    print("mul_node initialized with operands: ", mul_node.get_all_ports())
+    print("concat_node initialized with operands: ", concat_node.get_all_ports())
+    print("result_node initialized with operands: ", result_node.get_all_ports())
+    print()
 
     # соединение узлов в граф
-    sum_node.link(mul_node, 'multiplier1')
-    #
-    mul_node.link(concat_node, 'string1')
-    concat_node.link(result_node, 'conclusion')
+    # sum_node.link(mul_node, 'multiplier1')
+    # mul_node.link(concat_node, 'string1')
+    # concat_node.link(result_node, 'conclusion')
+    sum_node += mul_node.multiplier1
+    mul_node += concat_node.string1
+    concat_node += result_node.conclusion
+
+    print("sum_node = ", sum_node)
+    print("mul_node = ", mul_node)
+    print("concat_node = ", concat_node)
+    print("result_node = ", result_node)
+    print()
+
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
-
-    print("sum_node's operands after file_reading: ", sum_node.get_ports())
-    print("mul_node's operands after file_reading: ", mul_node.get_ports())
-    print("concat_node's operands after file_reading: ", concat_node.get_ports())
-    print("result_node's operands after file_reading: ", result_node.get_ports())
+    print("sum_node's operands after file_reading: ", sum_node.get_all_ports())
+    print("mul_node's operands after file_reading: ", mul_node.get_all_ports())
+    print("concat_node's operands after file_reading: ", concat_node.get_all_ports())
+    print("result_node's operands after file_reading: ", result_node.get_all_ports())
 
     print()
     result_node.do()
