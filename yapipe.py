@@ -59,7 +59,19 @@ class Operation(object):  # базовый класс
         self.other = other
         self.otherPort = portname
 
-    def __add__(self, other_node):
+ def get_port(self, key):
+        # вернем просто пару <узел>, <имя порта>
+        return (self, key)
+
+    # Any attempt to resolve a property, method, 
+    # or field name that doesn't actually exist
+    # on the object itself will be passed to _getattr_.
+    def __getattr__(self, key):
+        #return self.get_port
+        if key in self.ports: 
+            return self.get_port
+
+    def __iadd__(self, other_node):
         # TODO: sum_node.link(mul_node, 'multiplier1') -> sum_node += mul_node
         # self.link(other_node, )
         pass
@@ -72,11 +84,6 @@ class Operation(object):  # базовый класс
     # переопределение оператора []
     def __getitem__(self, key):
         return self.ports[key]
-
-    def __getattr__(self, key):
-        # TODO: добавить проверку, что key не совпадает с output например
-        if key not in self.ports:  # ????????????????????????????????????????????
-            return self[key]
 
 
 class Sum(Operation):  # обрабатывает событие суммы
