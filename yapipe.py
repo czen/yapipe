@@ -3,7 +3,6 @@
 from collections import deque
 
 
-
 # чтение из файла
 def file_reading():
     with open("in.txt") as f:
