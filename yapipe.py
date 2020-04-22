@@ -6,16 +6,14 @@ from collections import deque
 # чтение из файла
 def file_reading():
     with open("in.txt") as f:
-        # try:
         if f:
-            print("Reading file...", end='')
+            print("Reading file...")
             for line in f:
                 line = line.split('=')
                 if line[0] in port_map:
                     port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
-            print("Completed")
-        # except IOError:
-        #     print("! FILE ERROR !")
+        else:
+            print("ERROR [in file_reading]: file error !")
 
 
 class Operation(object):  # базовый класс
@@ -34,19 +32,17 @@ class Operation(object):  # базовый класс
 
     # абстрактный метод
     def do(self):
-        raise NotImplementedError("ERROR: the call of an abstract method")
+        raise NotImplementedError("ERROR: the call of an abstract method do()")
 
     # добавляет (справа) значение в очередь <portname> и выполняет метод do() текущего узла
     def send_data(self, portname, value):
         if portname in self.ports.keys():
-            if self.ports[portname] is not None:
-                self.ports[portname].append(value)
-            else:
-                print("ERROR: no port with name: ", portname, " ")
-        # TODO: Скорее всего тут ошибка, не вызывается метод do в функции file_reading
+            self.ports[portname].append(value)
+        else:
+            print('ERROR [in send_data]: no port with name: ', portname, " ")
         has_empty = False
         for i in self.ports:
-            if self.ports[i] != portname or len(self.ports[i]) == 0:
+            if self.ports[i] != portname and len(self.ports[i]) == 0:
                 has_empty = True
         if not has_empty:
             self.do()
@@ -55,6 +51,8 @@ class Operation(object):  # базовый класс
     def get_data(self, portname):
         if portname in self.ports.keys():
             return self.ports[portname].pop()
+        else:
+            print("ERROR [in get_data]: argument is not a name of port")
 
     # указывает следующий узел <other> графа и его очередь <portname>
     def link(self, other, portname):
@@ -65,28 +63,26 @@ class Operation(object):  # базовый класс
     def send_result(self, value):
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
+        else:
+            print("ERROR [in send_result]: other is empty (no next node)")
 
     # возвращает пару (<узел>, <имя порта>)
     def get_port(self, key):
         return (self, key)
 
-    # TODO: Убрать перегрузку __iadd__ и __getattr__
     # <объект класса>.<имя порта>  ->  (узел, имя порта)
     def __getattr__(self, key):
         if key in self.ports:
             return self.get_port(key)
-
-    # <объект класса> += <объект класса>.<имя порта>  ->  <объект класса>.link(<объект класса>, <имя порта>)
-    def __iadd__(self, other_node):
-        return self.link(other_node[0], other_node[1])
-
-    # <объект класса>(<объект класса>)  ->  <объект класса>.link(<объект класса>, <имя порта>)
-    def __call__(self, other):
-        if other is Operation:
-            pair = other.get_port
-            self.link(pair[0], pair[1])
         else:
-            return "ERROR: the call of a node without other node in an argument. "
+            return "ERROR [in __getattr__]: argument is not a name of port"
+
+    # <объект класса>(<объект класса>.<имя порта>)  ->  <объект класса>.link(<объект класса>, <имя порта>)
+    def __call__(self, other):
+        if isinstance(other[0], Operation):
+            self.link(other[0], other[1])
+        else:
+            return "ERROR [in __call__]: argument is not a subclass of Operation"
 
 
 class Sum(Operation):  # обрабатывает событие суммы
@@ -95,11 +91,10 @@ class Sum(Operation):  # обрабатывает событие суммы
         self.type = 'SUM'
         self._add_port('term1')
         self._add_port('term2')
-        self._add_port('result')
 
     def do(self):  # метод суммы
-        self['result'] = int(self.get_data('term1')) + int(self.get_data('term2'))
-        self.send_result(self['result'])
+        val = int(self.get_data('term1')) + int(self.get_data('term2'))
+        self.send_result(val)
 
 
 class Mul(Operation):  # обрабатывает событие умножения
@@ -108,11 +103,10 @@ class Mul(Operation):  # обрабатывает событие умножен�
         self.type = 'MUL'
         self._add_port('multiplier1')
         self._add_port('multiplier2')
-        self._add_port('result')
 
     def do(self):  # метод умножения
-        self['result'] = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
-        self.send_result(self['result'])
+        val = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
+        self.send_result(val)
 
 
 class Concat(Operation):  # обрабатывает событие конкатенации
@@ -121,7 +115,6 @@ class Concat(Operation):  # обрабатывает событие конкат
         self.type = 'CONCAT'
         self._add_port('string1')
         self._add_port('string2')
-        self._add_port('result')
 
     def do(self):  # метод конкатенации
         val = str(self.get_data('string1')) + self.get_data('string2')
@@ -152,31 +145,14 @@ if __name__ == "__main__":
                 'B': (sum_node, 'term2'),
                 'M': (mul_node, 'multiplier2'),
                 'C': (concat_node, 'string2')}
-
     print("sum_node initialized with operands: ", sum_node.get_all_ports())
     print("mul_node initialized with operands: ", mul_node.get_all_ports())
     print("concat_node initialized with operands: ", concat_node.get_all_ports())
     print("result_node initialized with operands: ", result_node.get_all_ports())
-
     # соединение узлов в граф
-
-    # sum_node.link(mul_node, 'multiplier1')
-    # mul_node.link(concat_node, 'string1')
-    # concat_node.link(result_node, 'conclusion')
-    # sum_node += mul_node.multiplier1
-    # mul_node += concat_node.string1
-    # concat_node += result_node.conclusion
-    sum_node(mul_node)
-    mul_node(concat_node)
-    concat_node(result_node)
-
+    sum_node(mul_node.multiplier1)
+    mul_node(concat_node.string1)
+    concat_node(result_node.conclusion)
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
-    print("sum_node's operands after file_reading: ", sum_node.get_all_ports())
-    print("mul_node's operands after file_reading: ", mul_node.get_all_ports())
-    print("concat_node's operands after file_reading: ", concat_node.get_all_ports())
-    print("result_node's operands after file_reading: ", result_node.get_all_ports())
-
-    print()
-    result_node.do()
     print("Must be: 30 yapipe is done!")
