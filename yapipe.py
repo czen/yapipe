@@ -21,6 +21,23 @@ class Operation(object):  # базовый класс
         self.ports = dict()  # Словарь со всеми портами узла
         self.other = None  # Следующий узел
         self.otherPort = deque()  # порт следующего узла, куда передается результат
+        self.color = 'white'
+
+    # Раскраска графа
+    def sort_nodes(self):
+        if self.color == 'black':
+            pass
+        elif self.color == 'gray':
+            print("ERROR [in sort_nodes]: loop found, topological sorting is impossible")
+        elif self.color == 'white':
+            self.color = 'gray'
+            if self.other is not None and self.type != 'RESULT':
+                self.other.sort_nodes()
+                self.color = 'black'
+            elif self.type == 'RESULT':
+                self.color = 'black'
+            elif self.other is None:
+                print("ERROR[in sort_nodes]: missing pointer to next node")
 
     # создает очередь <portname>
     def _add_port(self, portname):
@@ -39,7 +56,7 @@ class Operation(object):  # базовый класс
         if portname in self.ports.keys():
             self.ports[portname].append(value)
         else:
-            print('ERROR [in send_data]: no port with name: ', portname, " ")
+            print('ERROR [in send_data]: no port with name: ', portname)
         has_empty = False
         for i in self.ports:
             if self.ports[i] != portname and len(self.ports[i]) == 0:
@@ -156,3 +173,9 @@ if __name__ == "__main__":
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
     print("Must be: 30 yapipe is done!")
+
+    sum_node.sort_nodes()
+    print("sum_node color: ", sum_node.color)
+    print("mul_node color: ", mul_node.color)
+    print("concat_node color: ", concat_node.color)
+    print("result_node color: ", result_node.color)
