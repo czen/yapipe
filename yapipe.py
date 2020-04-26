@@ -19,13 +19,17 @@ def file_reading():
 class Operation(object):  # базовый класс
     def __init__(self):
         self.ports = dict()  # Словарь со всеми портами узла
+        # TODO: 1) сделать список со следующими узлами
         self.other = None  # Следующий узел
         self.otherPort = deque()  # порт следующего узла, куда передается результат
-        self.color = 'white'
-        self.number = -1
+        self.color = 'white'  # "цвет" вершины (для поиска в глубину)
+        self.number = -1  # Номер вершины
 
     # топологическая сортировка вершин
     # Вызывается от первого узла, параметр i не указывать при вызове
+    # TODO: 4) делать шаг рекурсии для каждого элемента в списке соседей
+    # TODO: 5) Алгоритм Тарьяна - после покраски в черный цвет заносить вершину в глобальный список; обратный порядок
+    #  следования этих вершин и будет правильной нимерацией
     def sort_nodes(self, i=0):
         i += 1
         if self.color == 'black':
@@ -77,11 +81,13 @@ class Operation(object):  # базовый класс
             print("ERROR [in get_data]: argument is not a name of port")
 
     # указывает следующий узел <other> графа и его очередь <portname>
+    # TODO: 2) вместо присваивания добавлять в конец списка
     def link(self, other, portname):
         self.other = other
         self.otherPort = portname
 
     # помещает значение <value> в очередь следующего узла (other)
+    # TODO: 3) в цикле проходить значениям в списке и выполнять send_data()
     def send_result(self, value):
         if self.other is not None:
             self.other.send_data(self.otherPort, value)
