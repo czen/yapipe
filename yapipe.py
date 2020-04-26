@@ -22,9 +22,12 @@ class Operation(object):  # базовый класс
         self.other = None  # Следующий узел
         self.otherPort = deque()  # порт следующего узла, куда передается результат
         self.color = 'white'
+        self.number = -1
 
-    # Раскраска графа
-    def sort_nodes(self):
+    # топологическая сортировка вершин
+    # Вызывается от первого узла, параметр i не указывать при вызове
+    def sort_nodes(self, i=0):
+        i += 1
         if self.color == 'black':
             pass
         elif self.color == 'gray':
@@ -32,10 +35,12 @@ class Operation(object):  # базовый класс
         elif self.color == 'white':
             self.color = 'gray'
             if self.other is not None and self.type != 'RESULT':
-                self.other.sort_nodes()
+                self.number = i
+                self.other.sort_nodes(self.number)
                 self.color = 'black'
             elif self.type == 'RESULT':
                 self.color = 'black'
+                self.number = i
             elif self.other is None:
                 print("ERROR[in sort_nodes]: missing pointer to next node")
 
@@ -83,9 +88,9 @@ class Operation(object):  # базовый класс
         else:
             print("ERROR [in send_result]: other is empty (no next node)")
 
-    # возвращает пару (<узел>, <имя порта>)
+    # возвращает пару (<узел>, <имя порта>) //кортеж
     def get_port(self, key):
-        return (self, key)
+        return self, key
 
     # <объект класса>.<имя порта>  ->  (узел, имя порта)
     def __getattr__(self, key):
@@ -175,7 +180,7 @@ if __name__ == "__main__":
     print("Must be: 30 yapipe is done!")
 
     sum_node.sort_nodes()
-    print("sum_node color: ", sum_node.color)
-    print("mul_node color: ", mul_node.color)
-    print("concat_node color: ", concat_node.color)
-    print("result_node color: ", result_node.color)
+    print("sum_node color: ", sum_node.color, sum_node.number)
+    print("mul_node color: ", mul_node.color, mul_node.number)
+    print("concat_node color: ", concat_node.color, concat_node.number)
+    print("result_node color: ", result_node.color, result_node.number)
