@@ -11,7 +11,8 @@ def file_reading():
             for line in f:
                 line = line.split('=')
                 if line[0] in port_map:
-                    port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
+                    if len(port_map[line[0]][0].other) != 0:
+                        port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
         else:
             print("ERROR [in file_reading]: file error !")
 
@@ -19,32 +20,28 @@ def file_reading():
 class Operation(object):  # базовый класс
     def __init__(self):
         self.ports = dict()  # Словарь со всеми портами узла
-        # TODO: 1) сделать список со следующими узлами
-        self.other = None  # Следующий узел
-        self.otherPort = deque()  # порт следующего узла, куда передается результат
+        self.other = []  # Список следующих узлов
+        self.otherPort = []  # список портов следующих узлов, куда передается результат
         self.color = 'white'  # "цвет" вершины (для поиска в глубину)
         self.number = -1  # Номер вершины
 
     # топологическая сортировка вершин
     # Вызывается от первого узла, параметр i не указывать при вызове
-    # TODO: 4) делать шаг рекурсии для каждого элемента в списке соседей
     # TODO: 5) Алгоритм Тарьяна - после покраски в черный цвет заносить вершину в глобальный список; обратный порядок
-    #  следования этих вершин и будет правильной нимерацией
-    def sort_nodes(self, i=0):
-        i += 1
+    #  следования этих вершин и будет правильной нумерацией
+    def sort_nodes(self):
         if self.color == 'black':
             pass
         elif self.color == 'gray':
             print("ERROR [in sort_nodes]: loop found, topological sorting is impossible")
         elif self.color == 'white':
             self.color = 'gray'
-            if self.other is not None and self.type != 'RESULT':
-                self.number = i
-                self.other.sort_nodes(self.number)
+            if len(self.other) != 0 and self.type != 'RESULT':
+                for i in range(0, len(self.other)):
+                    self.other[i].sort_nodes()
                 self.color = 'black'
             elif self.type == 'RESULT':
                 self.color = 'black'
-                self.number = i
             elif self.other is None:
                 print("ERROR[in sort_nodes]: missing pointer to next node")
 
@@ -81,16 +78,15 @@ class Operation(object):  # базовый класс
             print("ERROR [in get_data]: argument is not a name of port")
 
     # указывает следующий узел <other> графа и его очередь <portname>
-    # TODO: 2) вместо присваивания добавлять в конец списка
     def link(self, other, portname):
-        self.other = other
-        self.otherPort = portname
+        self.other.append(other)
+        self.otherPort.append(portname)
 
     # помещает значение <value> в очередь следующего узла (other)
-    # TODO: 3) в цикле проходить значениям в списке и выполнять send_data()
     def send_result(self, value):
-        if self.other is not None:
-            self.other.send_data(self.otherPort, value)
+        if len(self.other) != 0:
+            for i in range(0, len(self.other)):
+                self.other[i].send_data(self.otherPort[i], value)
         else:
             print("ERROR [in send_result]: other is empty (no next node)")
 
@@ -173,10 +169,6 @@ if __name__ == "__main__":
                 'B': (sum_node, 'term2'),
                 'M': (mul_node, 'multiplier2'),
                 'C': (concat_node, 'string2')}
-    print("sum_node initialized with operands: ", sum_node.get_all_ports())
-    print("mul_node initialized with operands: ", mul_node.get_all_ports())
-    print("concat_node initialized with operands: ", concat_node.get_all_ports())
-    print("result_node initialized with operands: ", result_node.get_all_ports())
     # соединение узлов в граф
     sum_node(mul_node.multiplier1)
     mul_node(concat_node.string1)
@@ -184,7 +176,7 @@ if __name__ == "__main__":
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
     print("Must be: 30 yapipe is done!")
-
+    # топологическая сортировка
     sum_node.sort_nodes()
     print("sum_node color: ", sum_node.color, sum_node.number)
     print("mul_node color: ", mul_node.color, mul_node.number)
