@@ -2,6 +2,18 @@
 
 from collections import deque
 
+tar = []
+
+
+# правильная нумерация вершин графа (вызывается после топологической сортировки)
+def get_numeration():
+    tar.reverse()
+    print()
+    print("Correct graph numeration:")
+    for i in range(0, len(tar)):
+        tar[i].number = i
+        print("    ", tar[i], " - ", tar[i].number)
+
 
 # чтение из файла
 def file_reading():
@@ -25,10 +37,7 @@ class Operation(object):  # базовый класс
         self.color = 'white'  # "цвет" вершины (для поиска в глубину)
         self.number = -1  # Номер вершины
 
-    # топологическая сортировка вершин
-    # Вызывается от первого узла, параметр i не указывать при вызове
-    # TODO: 5) Алгоритм Тарьяна - после покраски в черный цвет заносить вершину в глобальный список; обратный порядок
-    #  следования этих вершин и будет правильной нумерацией
+    # топологическая сортировка вершин (вызывается от первого узла)
     def sort_nodes(self):
         if self.color == 'black':
             pass
@@ -40,10 +49,12 @@ class Operation(object):  # базовый класс
                 for i in range(0, len(self.other)):
                     self.other[i].sort_nodes()
                 self.color = 'black'
+                tar.append(self)
             elif self.type == 'RESULT':
                 self.color = 'black'
+                tar.append(self)
             elif self.other is None:
-                print("ERROR[in sort_nodes]: missing pointer to next node")
+                print("WARNING [in sort_nodes]: missing pointer to next node")
 
     # создает очередь <portname>
     def _add_port(self, portname):
@@ -178,7 +189,4 @@ if __name__ == "__main__":
     print("Must be: 30 yapipe is done!")
     # топологическая сортировка
     sum_node.sort_nodes()
-    print("sum_node color: ", sum_node.color, sum_node.number)
-    print("mul_node color: ", mul_node.color, mul_node.number)
-    print("concat_node color: ", concat_node.color, concat_node.number)
-    print("result_node color: ", result_node.color, result_node.number)
+    get_numeration()
