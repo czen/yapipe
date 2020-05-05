@@ -2,7 +2,10 @@
 
 from collections import deque
 
-tar = []
+mode = 0  # режим работы (0 - рекурсивный, 1 - в порядке правильной нумерации)
+# словарь с соответствием режимов работы и значением переменной mode
+all_modes = {0: 'recursive', 1: 'in the order of the correct numeration'}
+tar = []  # список для алгоритма Тарьяна
 
 
 # правильная нумерация вершин графа (вызывается после топологической сортировки)
@@ -25,6 +28,15 @@ def file_reading():
                 if line[0] in port_map:
                     if len(port_map[line[0]][0].other) != 0:
                         port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
+                        if mode == 1:
+                            # попытка выполнить do для режима работы в порядке правильной нумерации
+                            for i in range(0, len(tar)):
+                                has_empty = False
+                                for j in tar[i].ports:
+                                    if len(tar[i].ports[j]) == 0:
+                                        has_empty = True
+                                if not has_empty:
+                                    tar[i].do()
         else:
             print("ERROR [in file_reading]: file error !")
 
@@ -73,13 +85,15 @@ class Operation(object):  # базовый класс
         if portname in self.ports.keys():
             self.ports[portname].append(value)
         else:
-            print('ERROR [in send_data]: no port with name: ', portname)
-        has_empty = False
-        for i in self.ports:
-            if self.ports[i] != portname and len(self.ports[i]) == 0:
-                has_empty = True
-        if not has_empty:
-            self.do()
+            print('ERROR [in send_data]: no port with the name: ', portname)
+        if mode == 0:
+            # попытка выполнить do для рекурсивного режима работы
+            has_empty = False
+            for i in self.ports:
+                if self.ports[i] != portname and len(self.ports[i]) == 0:
+                    has_empty = True
+            if not has_empty:
+                self.do()
 
     # снимает последнее (правое) значение с очереди <portname>
     def get_data(self, portname):
@@ -152,7 +166,7 @@ class Concat(Operation):  # обрабатывает событие конкат
         self._add_port('string2')
 
     def do(self):  # метод конкатенации
-        val = str(self.get_data('string1')) + self.get_data('string2')
+        val = str(self.get_data('string1')) + str(self.get_data('string2'))
         self.send_result(val)
 
 
@@ -164,29 +178,48 @@ class Result(Operation):  # обрабатывает событие заверш
 
     def do(self):  # метод вывода результата
         if len(self.ports['conclusion']) != 0:
-            print("CONCLUSION = ", self.ports['conclusion'])
+            print("CONCLUSION at node number ", self.number, " = ", self.ports['conclusion'].pop())
         else:
             print("CONCLUSION is empty")
 
 
 if __name__ == "__main__":
-    print()
     # описание узлов
-    sum_node = Sum()
+    sum_node1 = Sum()
+    sum_node2 = Sum()
     mul_node = Mul()
-    concat_node = Concat()
-    result_node = Result()
-    port_map = {'A': (sum_node, 'term1'),
-                'B': (sum_node, 'term2'),
+    concat_node1 = Concat()
+    concat_node2 = Concat()
+    result_node1 = Result()
+    result_node2 = Result()
+    port_map = {'A1': (sum_node1, 'term1'),
+                'B1': (sum_node1, 'term2'),
                 'M': (mul_node, 'multiplier2'),
-                'C': (concat_node, 'string2')}
+                'C1': (concat_node1, 'string2'),
+                'B2': (sum_node2, 'term2')}
     # соединение узлов в граф
-    sum_node(mul_node.multiplier1)
-    mul_node(concat_node.string1)
-    concat_node(result_node.conclusion)
-    # чтение данных из файла в порты узлов и выполнение do()
-    file_reading()
-    print("Must be: 30 yapipe is done!")
+    #
+    #        sum2 -> concat -> res2 => ['30 yapipe is done!']
+    #       ↗      ↗
+    # sum1 -> mul -> concat1 -> res1 => ['2030']
+    #
+    sum_node1(mul_node.multiplier1)
+    sum_node1(sum_node2.term1)
+    mul_node(concat_node1.string1)
+    mul_node(concat_node2.string2)
+    sum_node2(concat_node2.string1)
+    concat_node1(result_node1.conclusion)
+    concat_node2(result_node2.conclusion)
     # топологическая сортировка
-    sum_node.sort_nodes()
+    sum_node1.sort_nodes()
     get_numeration()
+    # выбор режима работы
+    print("Choose mode: ", all_modes)
+    mode = int(input())
+    if mode in all_modes.keys():
+        # чтение данных из файла в порты узлов и выполнение do()
+        file_reading()
+        print("Must be: 30 yapipe is done!")
+        print("         2030")
+    else:
+        print("ERROR [in choosing mode]: no such mode")

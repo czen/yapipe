@@ -1,4 +1,5 @@
-A=10
-B=5
+A1=10
+B1=5
 M=2
-C= yapipe is done!
+C1= yapipe is done!
+B2=5
