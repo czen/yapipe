@@ -1,11 +1,85 @@
 # -*- coding: utf8 -*-
 
 from collections import deque
+import random
 
 mode = 0  # режим работы (0 - рекурсивный, 1 - в порядке правильной нумерации)
 # словарь с соответствием режимов работы и значением переменной mode
 all_modes = {0: 'recursive', 1: 'in the order of the correct numeration'}
 tar = []  # список для алгоритма Тарьяна
+
+
+def byNumber_key(node):
+    return node.number
+
+
+def test_graph():
+    print()
+    print("Starting test_graph...")
+    test_array = []  # список с узлами тестового графа
+    # заполнение списка узлами случайного типа и нумерация этих узлов
+    for i in range(0, random.randint(10, 20)):
+        z = random.randint(0, 1)
+        if z == 0:
+            test_array.append(Sum())
+        else:
+            test_array.append(Mul())
+        test_array[i].number = i
+    print("     test_array created: ")
+    print("     ", test_array)
+    random.shuffle(test_array)  # перемешивание списка
+    print("     test_array shuffled ")
+    print("     ", test_array)
+    # построение дуг без нарушения нумерации
+    for i in range(0, len(test_array)-1):  # для всех узлов
+        count = 0  # счетчик
+        for k in range(0, len(test_array)-1):  # проходим по всем узлам
+            # находим 2 узла с номерами < текущего
+            if count < 2:
+                if test_array[k].number < test_array[i].number:
+                    # соединяем дугой найденный узел и текущий
+                    if test_array[i].type == 'SUM':
+                        if count == 0:
+                            test_array[k].link(test_array[i], 'term1')
+                            count += 1
+                        else:
+                            test_array[k].link(test_array[i], 'term2')
+                            count += 1
+                    else:
+                        if count == 0:
+                            test_array[k].link(test_array[i], 'multiplier1')
+                            count += 1
+                        else:
+                            test_array[k].link(test_array[i], 'multiplier2')
+                            count += 1
+            else:
+                break  # выход из цикла, когда нашли 2 узла с номерами < текущего
+    print("     arcs selected")
+    # добавление узла Result для вывода результата
+    test_array.append(Result())
+    test_array[len(test_array) - 1].number = len(test_array) - 1
+    print("     Result added")
+    print("     ", test_array)
+    # все узлы с пустыми other соединяем дугой с Result
+    for i in range(0, len(test_array) - 1):
+        if len(test_array[i].other) == 0:
+            test_array[i].link(test_array[len(test_array)-1], 'conclusion')
+    # заполняем порты тем узлам, в которые не входят дуги
+    for i in range(0, len(test_array) - 1):
+        if not test_array[i].has_previous:
+            if test_array[i].type == 'SUM':
+                test_array[i].send_data('term1', 1)
+                test_array[i].send_data('term2', 0)
+            else:
+                test_array[i].send_data('multiplier1', 3)
+                test_array[i].send_data('multiplier2', 3)
+    if mode == 1:
+        test_array = sorted(test_array, key=byNumber_key)
+        print("     test_array sorted")
+        print("     ", test_array)
+        for i in range(0, len(test_array)-1):
+            test_array[i].do()
+    print("Test_graph completed!")
 
 
 # правильная нумерация вершин графа (вызывается после топологической сортировки)
@@ -48,6 +122,7 @@ class Operation(object):  # базовый класс
         self.otherPort = []  # список портов следующих узлов, куда передается результат
         self.color = 'white'  # "цвет" вершины (для поиска в глубину)
         self.number = -1  # Номер вершины
+        self.has_previous = False  # флаг, что в узел входит дуга
 
     # топологическая сортировка вершин (вызывается от первого узла)
     def sort_nodes(self):
@@ -106,6 +181,7 @@ class Operation(object):  # базовый класс
     def link(self, other, portname):
         self.other.append(other)
         self.otherPort.append(portname)
+        other.has_previous = True
 
     # помещает значение <value> в очередь следующего узла (other)
     def send_result(self, value):
@@ -184,7 +260,6 @@ class Result(Operation):  # обрабатывает событие заверш
 
 
 if __name__ == "__main__":
-    # описание узлов
     sum_node1 = Sum()
     sum_node2 = Sum()
     mul_node = Mul()
@@ -221,5 +296,6 @@ if __name__ == "__main__":
         file_reading()
         print("Must be: 30 yapipe is done!")
         print("         2030")
+        test_graph()
     else:
         print("ERROR [in choosing mode]: no such mode")
