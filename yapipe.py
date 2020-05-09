@@ -18,19 +18,18 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    # for i in range(0, random.randint(5, 8)):
-    for i in range(0, 5):
+    for i in range(0, random.randint(100, 300)):
         z = random.randint(0, 1)
         if z == 0:
             test_array.append(Sum())
         else:
             test_array.append(Mul())
         test_array[i].number = i
-    print("test_array created: ")
-    print(test_array)
+    print("test_array created with amount of nodes: ", len(test_array))
+    # print(test_array)
     random.shuffle(test_array)  # перемешивание списка
-    print("test_array shuffled: ")
-    print(test_array)
+    # print("test_array shuffled: ")
+    # print(test_array)
     # построение дуг без нарушения нумерации
     for i in range(0, len(test_array)):  # для всех узлов
         count = 0  # счетчик
@@ -46,7 +45,7 @@ def test_graph():
                         else:
                             test_array[k].link(test_array[i], 'term2')
                             count += 1
-                        print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
+                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
                     else:
                         if count == 0:
                             test_array[k].link(test_array[i], 'multiplier1')
@@ -54,22 +53,25 @@ def test_graph():
                         else:
                             test_array[k].link(test_array[i], 'multiplier2')
                             count += 1
-                        print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
+                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
             else:
                 break  # выход из цикла, когда нашли 2 узла с номерами < текущего
-    print("arcs selected")
+    # print("arcs selected")
     # добавление узла Result для вывода результата (он всегда будет последним в списке)
     test_array.append(Result())
     test_array[len(test_array) - 1].number = len(test_array) - 1
-    print("result added:")
-    print(test_array)
+    # print("result added:")
+    # print(test_array)
     # все узлы с пустыми other соединяем дугой с узлом Result
+    linked_to_result = 0  # счетчик для подсчета узлов, соединенных с узлом Result
     for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
         if len(test_array[i].other) == 0:
-            test_array[i].link(test_array[len(test_array)-1], 'conclusion')
-            print("Node number ", test_array[i].number, "is linked to RESULT node")
+            test_array[i].link(test_array[len(test_array) - 1], 'conclusion')
+            linked_to_result += 1
+            # print("Node number ", test_array[i].number, "is linked with RESULT node")
+    print(linked_to_result, " nodes are linked to RESULT node")
     # заполняем оба порта узлу с номером 0 и второй порт узлу с номером 1
-    for i in range(0, len(test_array)-1):  # -1 исключает узел Result
+    for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
         if test_array[i].number == 0:
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term1', 1)
@@ -84,10 +86,11 @@ def test_graph():
                 test_array[i].send_data('multiplier2', 3)
     if mode == 1:
         test_array = sorted(test_array, key=byNumber_key)
-        print("test_array sorted:")
-        print(test_array)
-        for i in range(0, len(test_array)-1):
+        # print("test_array sorted:")
+        # print(test_array)
+        for i in range(0, len(test_array)):
             test_array[i].do()
+    print("RESULT do ", test_array[len(test_array)-1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
 
 
@@ -162,7 +165,7 @@ class Operation(object):  # базовый класс
 
     # абстрактный метод
     def do(self):
-        raise NotImplementedError("ERROR in node number ", self.number, ": the call of an abstract method do()")
+        print("WARNING [in do, node number ", self.number, "]: the call of an abstract method do()")
 
     # добавляет (справа) значение в очередь <portname> и выполняет метод do() текущего узла
     def send_data(self, portname, value):
@@ -231,9 +234,9 @@ class Sum(Operation):  # обрабатывает событие суммы
 
     def do(self):  # метод суммы
         val = int(self.get_data('term1')) + int(self.get_data('term2'))
-        print("SUM node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other)-1):
-            print("     and val is sent to node number ", self.other[i].number)
+        # print("SUM node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other)-1):
+        #    print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -246,9 +249,9 @@ class Mul(Operation):  # обрабатывает событие умножен�
 
     def do(self):  # метод умножения
         val = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
-        print("MUL node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other) - 1):
-            print("     and val is sent to node number ", self.other[i].number)
+        # print("MUL node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other) - 1):
+        #     print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -261,9 +264,9 @@ class Concat(Operation):  # обрабатывает событие конкат
 
     def do(self):  # метод конкатенации
         val = str(self.get_data('string1')) + str(self.get_data('string2'))
-        print("CONCAT node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other) - 1):
-            print("     and val is sent to node number ", self.other[i].number)
+        # print("CONCAT node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other) - 1):
+        #     print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -272,15 +275,25 @@ class Result(Operation):  # обрабатывает событие заверш
         super(Result, self).__init__()
         self.type = 'RESULT'
         self._add_port('conclusion')
+        self.count = 0  # поле - счетчик для посчета количества выполнений do
 
     def do(self):  # метод вывода результата
         if len(self.ports['conclusion']) != 0:
-            print("CONCLUSION at node number ", self.number, " = ", self.ports['conclusion'].pop())
+            if mode == 0:
+                self.count += 1
+                print("CONCLUSION ", self.count, "at node number ", self.number, " = ",
+                      self.ports['conclusion'].pop())
+            elif mode == 1:
+                for i in range(0, len(self.ports['conclusion'])):
+                    self.count += 1
+                    print("CONCLUSION ", self.count, " at node number ", self.number, " = ",
+                          self.ports['conclusion'].popleft())
         else:
             print("CONCLUSION at node number ", self.number, " is empty")
 
 
 if __name__ == "__main__":
+    # описание узлов
     sum_node1 = Sum()
     sum_node2 = Sum()
     mul_node = Mul()
@@ -314,9 +327,13 @@ if __name__ == "__main__":
     mode = int(input())
     if mode in all_modes.keys():
         # чтение данных из файла в порты узлов и выполнение do()
-        # file_reading()
-        # print("Must be: 30 yapipe is done!")
-        # print("         2030")
-        test_graph()
+        file_reading()
+        print("Must be: 30 yapipe is done!")
+        print("         2030")
+        print()
+        print("Do u need to start test_graph? (Y - yes)")
+        ch = input()
+        if ch == "Y" or ch == "y":
+            test_graph()
     else:
         print("ERROR [in choosing mode]: no such mode")
