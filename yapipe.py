@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 
+from decimal import *
 from collections import deque
 import random
 
@@ -18,12 +19,18 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    for i in range(0, random.randint(100, 300)):
-        z = random.randint(0, 1)
+    for i in range(0, random.randint(5000, 10000)):
+        z = random.randint(0, 4)
         if z == 0:
             test_array.append(Sum())
-        else:
+        elif z == 1:
             test_array.append(Mul())
+        elif z == 2:
+            test_array.append(CountAperi())
+        elif z == 3:
+            test_array.append(CountPi())
+        else:
+            test_array.append(CountE())
         test_array[i].number = i
     print("test_array created with amount of nodes: ", len(test_array))
     # print(test_array)
@@ -46,12 +53,19 @@ def test_graph():
                             test_array[k].link(test_array[i], 'term2')
                             count += 1
                         # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
-                    else:
+                    elif test_array[i].type == 'MUL':
                         if count == 0:
                             test_array[k].link(test_array[i], 'multiplier1')
                             count += 1
                         else:
                             test_array[k].link(test_array[i], 'multiplier2')
+                            count += 1
+                    else:
+                        if count == 0:
+                            test_array[k].link(test_array[i], 'amount_of_terms')
+                            count += 1
+                        else:
+                            test_array[k].link(test_array[i], 'accuracy')
                             count += 1
                         # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
             else:
@@ -72,25 +86,30 @@ def test_graph():
     print(linked_to_result, " nodes are linked to RESULT node")
     # заполняем оба порта узлу с номером 0 и второй порт узлу с номером 1
     for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
-        if test_array[i].number == 0:
+        if test_array[i].number == 0:  # для узла 0
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term1', 1)
                 test_array[i].send_data('term2', 1)
-            else:
+            elif test_array[i].type == 'MUL':
                 test_array[i].send_data('multiplier1', 3)
                 test_array[i].send_data('multiplier2', 3)
-        if test_array[i].number == 1:
+            else:
+                test_array[i].send_data('amount_of_terms', 2030)
+                test_array[i].send_data('accuracy', 1.000001)
+        if test_array[i].number == 1:  # для узла 1
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term2', 1)
-            else:
+            elif test_array[i].type == 'MUL':
                 test_array[i].send_data('multiplier2', 3)
+            else:
+                test_array[i].send_data('accuracy', 1.000001)
     if mode == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
         # print(test_array)
         for i in range(0, len(test_array)):
             test_array[i].do()
-    print("RESULT do ", test_array[len(test_array)-1].count, " of ", linked_to_result, "linked to it")
+    print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
 
 
@@ -129,6 +148,7 @@ def file_reading():
 
 class Operation(object):  # базовый класс
     def __init__(self):
+        self.type = 'OPERATION'  # строка с названием операции
         self.ports = dict()  # Словарь со всеми портами узла
         self.other = []  # Список следующих узлов
         self.otherPort = []  # список портов следующих узлов, куда передается результат
@@ -225,38 +245,38 @@ class Operation(object):  # базовый класс
             return "ERROR [in __call__ ", self.number, "]: argument is not a subclass of Operation"
 
 
-class Sum(Operation):  # обрабатывает событие суммы
-    def __init__(self):  # инициализирует объект суммы
+class Sum(Operation):  # сумма
+    def __init__(self):
         super(Sum, self).__init__()
         self.type = 'SUM'
         self._add_port('term1')
         self._add_port('term2')
 
     def do(self):  # метод суммы
-        val = int(self.get_data('term1')) + int(self.get_data('term2'))
+        val = Decimal(self.get_data('term1')) + Decimal(self.get_data('term2'))
         # print("SUM node number ", self.number, " done with val = ", val)
         # for i in range(0, len(self.other)-1):
         #    print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
-class Mul(Operation):  # обрабатывает событие умножения
-    def __init__(self):  # инициализирует объект умножения
+class Mul(Operation):  # умножение
+    def __init__(self):
         super(Mul, self).__init__()
         self.type = 'MUL'
         self._add_port('multiplier1')
         self._add_port('multiplier2')
 
     def do(self):  # метод умножения
-        val = int(self.get_data('multiplier1')) * int(self.get_data('multiplier2'))
+        val = Decimal(self.get_data('multiplier1')) * Decimal(self.get_data('multiplier2'))
         # print("MUL node number ", self.number, " done with val = ", val)
         # for i in range(0, len(self.other) - 1):
         #     print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
-class Concat(Operation):  # обрабатывает событие конкатенации
-    def __init__(self):  # инициализирует объект конкатенации
+class Concat(Operation):  # конкатенация
+    def __init__(self):
         super(Concat, self).__init__()
         self.type = 'CONCAT'
         self._add_port('string1')
@@ -270,8 +290,57 @@ class Concat(Operation):  # обрабатывает событие конкат
         self.send_result(val)
 
 
-class Result(Operation):  # обрабатывает событие завершения процесса
-    def __init__(self):  # инициализирует завершающий объект
+class CountAperi(Operation):  # вычисление числа ζ(3) (Постоянная Апери)
+    def __init__(self):
+        super(CountAperi, self).__init__()
+        self.type = 'COUNT_APERI'
+        self._add_port('amount_of_terms')
+        self._add_port('accuracy')
+
+    def do(self):  # метод подсчета суммы обратных кубов
+        val = Decimal(0)
+        n = round(self.get_data('amount_of_terms'))
+        for i in range(1, n):
+            val += Decimal('1') / (Decimal(i ** 3))
+        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+
+
+class CountPi(Operation):  # вычисление числа π (пи)
+    def __init__(self):
+        super(CountPi, self).__init__()
+        self.type = 'COUNT_PI'
+        self._add_port('amount_of_terms')
+        self._add_port('accuracy')
+
+    def do(self):  # метод подсчета суммы Ряда Лейбница, умноженной на 4
+        val = Decimal(0)
+        n = round(self.get_data('amount_of_terms'))
+        for i in range(0, n):
+            val += Decimal((-1) ** i) / Decimal(2 * i + 1)
+        val = val * 4
+        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+
+
+class CountE(Operation):  # вычисление числа e (число Эйлера)
+    def __init__(self):
+        super(CountE, self).__init__()
+        self.type = 'COUNT_E'
+        self._add_port('amount_of_terms')
+        self._add_port('accuracy')
+
+    def do(self):  # метод вычисления суммы ряда (1/n!), n = 0..inf
+        val = Decimal(0)
+        n = round(self.get_data('amount_of_terms'))
+        for i in range(0, n):
+            fac = 1
+            for j in range(2, i + 1):
+                fac *= j
+            val += Decimal('1') / Decimal(fac)
+        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+
+
+class Result(Operation):  # завершение процесса
+    def __init__(self):
         super(Result, self).__init__()
         self.type = 'RESULT'
         self._add_port('conclusion')
