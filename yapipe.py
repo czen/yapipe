@@ -94,21 +94,26 @@ def test_graph():
                 test_array[i].send_data('multiplier1', 3)
                 test_array[i].send_data('multiplier2', 3)
             else:
-                test_array[i].send_data('amount_of_terms', 2030)
-                test_array[i].send_data('accuracy', 1.000001)
+                test_array[i].send_data('amount_of_terms', 3)
+                test_array[i].send_data('accuracy', 1.0001)
         if test_array[i].number == 1:  # для узла 1
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term2', 1)
             elif test_array[i].type == 'MUL':
                 test_array[i].send_data('multiplier2', 3)
             else:
-                test_array[i].send_data('accuracy', 1.000001)
+                test_array[i].send_data('accuracy', 1.0001)
     if mode == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
         # print(test_array)
-        for i in range(0, len(test_array)):
+        print("Executing the graph...")
+        for i in range(0, len(test_array) - 1):  # выполнение всех узлов, кроме Result
             test_array[i].do()
+            if i % (round(len(test_array) / 10)) == 0:  # при выполнении замеров отключать вывод *
+                print(" * ", end="")
+        print()
+        test_array[len(test_array) - 1].do()  # выполнение узла Result
     print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
 
@@ -294,49 +299,58 @@ class CountAperi(Operation):  # вычисление числа ζ(3) (Пост�
     def __init__(self):
         super(CountAperi, self).__init__()
         self.type = 'COUNT_APERI'
-        self._add_port('amount_of_terms')
-        self._add_port('accuracy')
+        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 1000
+        self._add_port('accuracy')  # точностью будет количество значащих знаков после запятой в этом поле
 
     def do(self):  # метод подсчета суммы обратных кубов
+        # выделяем значащие знаки после запятой значения поля accuracy
+        z = Decimal(str(self.get_data('accuracy')))
+        z = z - int(z)
         val = Decimal(0)
-        n = round(self.get_data('amount_of_terms'))
+        n = round(self.get_data('amount_of_terms')) * 1000
         for i in range(1, n):
             val += Decimal('1') / (Decimal(i ** 3))
-        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+        self.send_result(val.quantize(Decimal(z)))
 
 
 class CountPi(Operation):  # вычисление числа π (пи)
     def __init__(self):
         super(CountPi, self).__init__()
         self.type = 'COUNT_PI'
-        self._add_port('amount_of_terms')
-        self._add_port('accuracy')
+        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 1000
+        self._add_port('accuracy')  # точностью будет количество значащих знаков после запятой в этом поле
 
     def do(self):  # метод подсчета суммы Ряда Лейбница, умноженной на 4
+        # выделяем значащие знаки после запятой значения поля accuracy
+        z = Decimal(str(self.get_data('accuracy')))
+        z = z - int(z)
         val = Decimal(0)
-        n = round(self.get_data('amount_of_terms'))
+        n = round(self.get_data('amount_of_terms')) * 1000
         for i in range(0, n):
             val += Decimal((-1) ** i) / Decimal(2 * i + 1)
         val = val * 4
-        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+        self.send_result(val.quantize(Decimal(z)))
 
 
 class CountE(Operation):  # вычисление числа e (число Эйлера)
     def __init__(self):
         super(CountE, self).__init__()
         self.type = 'COUNT_E'
-        self._add_port('amount_of_terms')
-        self._add_port('accuracy')
+        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 100
+        self._add_port('accuracy')  # точностью будет количество значащих знаков после запятой в этом поле
 
     def do(self):  # метод вычисления суммы ряда (1/n!), n = 0..inf
+        # выделяем значащие знаки после запятой значения поля accuracy
+        z = Decimal(str(self.get_data('accuracy')))
+        z = z - int(z)
         val = Decimal(0)
-        n = round(self.get_data('amount_of_terms'))
+        n = round(self.get_data('amount_of_terms')) * 100
         for i in range(0, n):
             fac = 1
             for j in range(2, i + 1):
                 fac *= j
             val += Decimal('1') / Decimal(fac)
-        self.send_result(val.quantize(Decimal(str(self.get_data('accuracy')))))
+        self.send_result(val.quantize(Decimal(z)))
 
 
 class Result(Operation):  # завершение процесса
