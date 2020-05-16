@@ -3,7 +3,9 @@
 from decimal import *
 from collections import deque
 import random
+from graphviz import Digraph
 
+dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
 mode = 0  # режим работы (0 - рекурсивный, 1 - в порядке правильной нумерации)
 # словарь с соответствием режимов работы и значением переменной mode
 all_modes = {0: 'recursive', 1: 'in the order of the correct numeration'}
@@ -14,12 +16,11 @@ def byNumber_key(node):
     return node.number
 
 
-# TODO: добавить graphviz
 def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    for i in range(0, random.randint(5000, 10000)):
+    for i in range(0, random.randint(500, 1000)):
         z = random.randint(0, 4)
         if z == 0:
             test_array.append(Sum())
@@ -84,6 +85,8 @@ def test_graph():
             linked_to_result += 1
             # print("Node number ", test_array[i].number, "is linked with RESULT node")
     print(linked_to_result, " nodes are linked to RESULT node")
+    # визуализация графа
+    get_visualization(test_array)
     # заполняем оба порта узлу с номером 0 и второй порт узлу с номером 1
     for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
         if test_array[i].number == 0:  # для узла 0
@@ -118,7 +121,20 @@ def test_graph():
     print("Test_graph completed!")
 
 
-# правильная нумерация вершин графа (вызывается после топологической сортировки)
+# визуализация графа в файл test-output/TestGraph
+# для вызывается от списка узлов
+def get_visualization(nodes: list):
+    for i in range(0, len(nodes)):
+        dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
+    for i in range(0, len(nodes)):
+        if len(nodes[i].other) > 0:
+            for j in range(0, len(nodes[i].other)):
+                dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
+    print("Rendering...")
+    dot.render('test-output/TestGraph.gv', view=True)
+
+
+# правильная нумерация вершин графа и заполнение списка tar (вызывается после топологической сортировки)
 def get_numeration():
     tar.reverse()
     print()
@@ -404,6 +420,7 @@ if __name__ == "__main__":
     concat_node2(result_node2.conclusion)
     # топологическая сортировка
     sum_node1.sort_nodes()
+    # составление правильной нумерации и заполнение списка tar
     get_numeration()
     # выбор режима работы
     print("Choose mode: ", all_modes)
