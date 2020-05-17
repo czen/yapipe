@@ -1,1 +1,2 @@
 jupyter
+graphviz~=0.14
