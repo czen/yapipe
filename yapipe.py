@@ -239,7 +239,7 @@ class CountE(Operation):  # вычисление числа e (число Эйл
     def __init__(self):
         super(CountE, self).__init__()
         self.type = 'COUNT_E'
-        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 100
+        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 10
         self._add_port('accuracy')  # точностью будет количество значащих знаков после запятой в этом поле
 
     def do(self):  # метод вычисления суммы ряда (1/n!), n = 0..inf
