@@ -12,7 +12,8 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    for i in range(0, random.randint(10, 20)):
+    big_n = random.randint(500, 1000)
+    for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
             test_array.append(Sum())
@@ -31,36 +32,40 @@ def test_graph():
     # print("test_array shuffled: ")
     # print(test_array)
     # построение дуг без нарушения нумерации
-    for i in range(0, len(test_array)):  # для всех узлов
+    for i in range(0, len(test_array)):  # для каждого узла
         count = 0  # счетчик
-        for k in range(0, len(test_array)):  # проходим по всем узлам
+        for k in range(0, len(test_array)):  # проходим по всему списку узлов
+            # random.shuffle(test_array)  # каждый раз мешаем список
             # находим 2 узла с номерами < текущего
             if count < 2:
                 if test_array[k].number < test_array[i].number:
-                    # соединяем дугой найденный узел и текущий
-                    if test_array[i].type == 'SUM':
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'term1')
-                            count += 1
+                    if random.randint(0, big_n//10) == 1:  # соединяем, если выпадает 1
+                        # соединяем дугой найденный узел и текущий
+                        if test_array[i].type == 'SUM':
+                            if count == 0:
+                                test_array[k].link(test_array[i], 'term1')
+                                count += 1
+                            else:
+                                test_array[k].link(test_array[i], 'term2')
+                                count += 1
+                            # print("Node number ", test_array[k].number, "linked with node number ",
+                            # test_array[i].number)
+                        elif test_array[i].type == 'MUL':
+                            if count == 0:
+                                test_array[k].link(test_array[i], 'multiplier1')
+                                count += 1
+                            else:
+                                test_array[k].link(test_array[i], 'multiplier2')
+                                count += 1
                         else:
-                            test_array[k].link(test_array[i], 'term2')
-                            count += 1
-                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
-                    elif test_array[i].type == 'MUL':
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'multiplier1')
-                            count += 1
-                        else:
-                            test_array[k].link(test_array[i], 'multiplier2')
-                            count += 1
-                    else:
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'amount_of_terms')
-                            count += 1
-                        else:
-                            test_array[k].link(test_array[i], 'accuracy')
-                            count += 1
-                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
+                            if count == 0:
+                                test_array[k].link(test_array[i], 'amount_of_terms')
+                                count += 1
+                            else:
+                                test_array[k].link(test_array[i], 'accuracy')
+                                count += 1
+                            # print("Node number ", test_array[k].number, "linked with node number ",
+                            # test_array[i].number)
             else:
                 break  # выход из цикла, когда нашли 2 узла с номерами < текущего
     # print("arcs selected")
@@ -79,9 +84,9 @@ def test_graph():
     print(linked_to_result, " nodes are linked to RESULT node")
     # визуализация графа
     get_visualization(test_array)
-    # заполняем оба порта узлу с номером 0 и второй порт узлу с номером 1
-    for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
-        if test_array[i].number == 0:  # для узла 0
+    # всем узлам, в которые входят 0 или 1 дуга, соответственно заполняем порты
+    for i in range(0, len(test_array)):
+        if test_array[i].amount_of_previous == 0:
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term1', 1)
                 test_array[i].send_data('term2', 1)
@@ -91,7 +96,7 @@ def test_graph():
             else:
                 test_array[i].send_data('amount_of_terms', 3)
                 test_array[i].send_data('accuracy', 1.0001)
-        if test_array[i].number == 1:  # для узла 1
+        elif test_array[i].amount_of_previous == 1:
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term2', 1)
             elif test_array[i].type == 'MUL':
