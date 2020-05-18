@@ -2,123 +2,11 @@
 
 from decimal import *
 from collections import deque
-import random
 from graphviz import Digraph
+from config import settings
 
 dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
-mode = 0  # режим работы (0 - рекурсивный, 1 - в порядке правильной нумерации)
-# словарь с соответствием режимов работы и значением переменной mode
-all_modes = {0: 'recursive', 1: 'in the order of the correct numeration'}
 tar = []  # список для алгоритма Тарьяна
-
-
-def byNumber_key(node):
-    return node.number
-
-
-def test_graph():
-    print("Starting test_graph...")
-    test_array = []  # список с узлами тестового графа
-    # заполнение списка узлами случайного типа и нумерация этих узлов
-    for i in range(0, random.randint(500, 1000)):
-        z = random.randint(0, 4)
-        if z == 0:
-            test_array.append(Sum())
-        elif z == 1:
-            test_array.append(Mul())
-        elif z == 2:
-            test_array.append(CountAperi())
-        elif z == 3:
-            test_array.append(CountPi())
-        else:
-            test_array.append(CountE())
-        test_array[i].number = i
-    print("test_array created with amount of nodes: ", len(test_array))
-    # print(test_array)
-    random.shuffle(test_array)  # перемешивание списка
-    # print("test_array shuffled: ")
-    # print(test_array)
-    # построение дуг без нарушения нумерации
-    for i in range(0, len(test_array)):  # для всех узлов
-        count = 0  # счетчик
-        for k in range(0, len(test_array)):  # проходим по всем узлам
-            # находим 2 узла с номерами < текущего
-            if count < 2:
-                if test_array[k].number < test_array[i].number:
-                    # соединяем дугой найденный узел и текущий
-                    if test_array[i].type == 'SUM':
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'term1')
-                            count += 1
-                        else:
-                            test_array[k].link(test_array[i], 'term2')
-                            count += 1
-                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
-                    elif test_array[i].type == 'MUL':
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'multiplier1')
-                            count += 1
-                        else:
-                            test_array[k].link(test_array[i], 'multiplier2')
-                            count += 1
-                    else:
-                        if count == 0:
-                            test_array[k].link(test_array[i], 'amount_of_terms')
-                            count += 1
-                        else:
-                            test_array[k].link(test_array[i], 'accuracy')
-                            count += 1
-                        # print("Node number ", test_array[k].number, "linked with node number ", test_array[i].number)
-            else:
-                break  # выход из цикла, когда нашли 2 узла с номерами < текущего
-    # print("arcs selected")
-    # добавление узла Result для вывода результата (он всегда будет последним в списке)
-    test_array.append(Result())
-    test_array[len(test_array) - 1].number = len(test_array) - 1
-    # print("result added:")
-    # print(test_array)
-    # все узлы с пустыми other соединяем дугой с узлом Result
-    linked_to_result = 0  # счетчик для подсчета узлов, соединенных с узлом Result
-    for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
-        if len(test_array[i].other) == 0:
-            test_array[i].link(test_array[len(test_array) - 1], 'conclusion')
-            linked_to_result += 1
-            # print("Node number ", test_array[i].number, "is linked with RESULT node")
-    print(linked_to_result, " nodes are linked to RESULT node")
-    # визуализация графа
-    get_visualization(test_array)
-    # заполняем оба порта узлу с номером 0 и второй порт узлу с номером 1
-    for i in range(0, len(test_array) - 1):  # -1 исключает узел Result
-        if test_array[i].number == 0:  # для узла 0
-            if test_array[i].type == 'SUM':
-                test_array[i].send_data('term1', 1)
-                test_array[i].send_data('term2', 1)
-            elif test_array[i].type == 'MUL':
-                test_array[i].send_data('multiplier1', 3)
-                test_array[i].send_data('multiplier2', 3)
-            else:
-                test_array[i].send_data('amount_of_terms', 3)
-                test_array[i].send_data('accuracy', 1.0001)
-        if test_array[i].number == 1:  # для узла 1
-            if test_array[i].type == 'SUM':
-                test_array[i].send_data('term2', 1)
-            elif test_array[i].type == 'MUL':
-                test_array[i].send_data('multiplier2', 3)
-            else:
-                test_array[i].send_data('accuracy', 1.0001)
-    if mode == 1:
-        test_array = sorted(test_array, key=byNumber_key)
-        # print("test_array sorted:")
-        # print(test_array)
-        print("Executing the graph...")
-        for i in range(0, len(test_array) - 1):  # выполнение всех узлов, кроме Result
-            test_array[i].do()
-            if i % (round(len(test_array) / 10)) == 0:  # при выполнении замеров отключать вывод *
-                print(" * ", end="")
-        print()
-        test_array[len(test_array) - 1].do()  # выполнение узла Result
-    print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
-    print("Test_graph completed!")
 
 
 # визуализация графа в файл test-output/TestGraph
@@ -137,11 +25,10 @@ def get_visualization(nodes: list):
 # правильная нумерация вершин графа и заполнение списка tar (вызывается после топологической сортировки)
 def get_numeration():
     tar.reverse()
-    print()
     print("Correct graph numeration:")
     for i in range(0, len(tar)):
         tar[i].number = i
-        print("    ", tar[i], " - ", tar[i].number)
+        print("    ", tar[i].type, " - ", tar[i].number)
 
 
 # чтение из файла
@@ -154,7 +41,7 @@ def file_reading():
                 if line[0] in port_map:
                     if len(port_map[line[0]][0].other) != 0:
                         port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
-                        if mode == 1:
+                        if settings["mode"] == 1:
                             # попытка выполнить do для режима работы в порядке правильной нумерации
                             for i in range(0, len(tar)):
                                 has_empty = False
@@ -214,7 +101,7 @@ class Operation(object):  # базовый класс
             self.ports[portname].append(value)
         else:
             print("ERROR [in send_data, node number ", self.number, "]: no port with the name: ", portname)
-        if mode == 0:
+        if settings["mode"] == 0:
             # попытка выполнить do для рекурсивного режима работы
             has_empty = False
             for i in self.ports:
@@ -378,11 +265,11 @@ class Result(Operation):  # завершение процесса
 
     def do(self):  # метод вывода результата
         if len(self.ports['conclusion']) != 0:
-            if mode == 0:
+            if settings["mode"] == 0:
                 self.count += 1
                 print("CONCLUSION ", self.count, "at node number ", self.number, " = ",
                       self.ports['conclusion'].pop())
-            elif mode == 1:
+            elif settings["mode"] == 1:
                 for i in range(0, len(self.ports['conclusion'])):
                     self.count += 1
                     print("CONCLUSION ", self.count, " at node number ", self.number, " = ",
@@ -392,6 +279,7 @@ class Result(Operation):  # завершение процесса
 
 
 if __name__ == "__main__":
+    print("Yapipe starts with mode = ", settings["mode"])
     # описание узлов
     sum_node1 = Sum()
     sum_node2 = Sum()
@@ -422,18 +310,8 @@ if __name__ == "__main__":
     sum_node1.sort_nodes()
     # составление правильной нумерации и заполнение списка tar
     get_numeration()
-    # выбор режима работы
-    print("Choose mode: ", all_modes)
-    mode = int(input())
-    if mode in all_modes.keys():
-        # чтение данных из файла в порты узлов и выполнение do()
-        file_reading()
-        print("Must be: 30 yapipe is done!")
-        print("         2030")
-        print()
-        print("Do u need to start test_graph? (Y - yes)")
-        ch = input()
-        if ch == "Y" or ch == "y":
-            test_graph()
-    else:
-        print("ERROR [in choosing mode]: no such mode")
+    # чтение данных из файла в порты узлов и выполнение do()
+    file_reading()
+    print("Must be: 30 yapipe is done!")
+    print("         2030")
+    print()
