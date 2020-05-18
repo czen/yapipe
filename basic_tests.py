@@ -37,6 +37,8 @@ class YapipeTest(unittest.TestCase):
         testobj.link(testobj2, 'R')
         testobj.send_data('term1', 1)
         testobj.send_data('term2', 2)
+        if settings["mode"] == 1:
+            testobj.do()
         self.assertEqual(3, testobj2.get_data('R'))
 
     def test_mul(self):
@@ -48,6 +50,8 @@ class YapipeTest(unittest.TestCase):
         testobj.link(testobj2, 'R')
         testobj.send_data('multiplier1', 2)
         testobj.send_data('multiplier2', 3)
+        if settings["mode"] == 1:
+            testobj.do()
         self.assertEqual(6, testobj2.get_data('R'))
 
     def test_concat(self):
@@ -59,6 +63,8 @@ class YapipeTest(unittest.TestCase):
         testobj.link(testobj2, 'R')
         testobj.send_data('string1', "ya")
         testobj.send_data('string2', "pipe")
+        if settings["mode"] == 1:
+            testobj.do()
         self.assertEqual("yapipe", testobj2.get_data('R'))
 
 
