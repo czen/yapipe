@@ -2,6 +2,7 @@
 
 from yapipe import *
 import random
+import time
 
 
 def byNumber_key(node):
@@ -12,7 +13,7 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    big_n = random.randint(500, 1000)
+    big_n = random.randint(100, 500)
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -35,7 +36,6 @@ def test_graph():
     for i in range(0, len(test_array)):  # для каждого узла
         count = 0  # счетчик
         for k in range(0, len(test_array)):  # проходим по всему списку узлов
-            # random.shuffle(test_array)  # каждый раз мешаем список
             # находим 2 узла с номерами < текущего
             if count < 2:
                 if test_array[k].number < test_array[i].number:
@@ -84,30 +84,34 @@ def test_graph():
     print(linked_to_result, " nodes are linked to RESULT node")
     # визуализация графа
     get_visualization(test_array)
+    if settings["mode"] == 0 and settings["monitoring"] == 1:
+        start_time = time.time()  # начало отсчета времени для рекурсивного режима
     # всем узлам, в которые входят 0 или 1 дуга, соответственно заполняем порты
     for i in range(0, len(test_array)):
         if test_array[i].amount_of_previous == 0:
             if test_array[i].type == 'SUM':
-                test_array[i].send_data('term1', 1)
-                test_array[i].send_data('term2', 1)
+                test_array[i].send_data('term1', 2)
+                test_array[i].send_data('term2', 2)
             elif test_array[i].type == 'MUL':
-                test_array[i].send_data('multiplier1', 3)
-                test_array[i].send_data('multiplier2', 3)
+                test_array[i].send_data('multiplier1', 2)
+                test_array[i].send_data('multiplier2', 2)
             else:
-                test_array[i].send_data('amount_of_terms', 3)
-                test_array[i].send_data('accuracy', 1.0001)
+                test_array[i].send_data('amount_of_terms', 2)
+                test_array[i].send_data('accuracy', 1.01)
         elif test_array[i].amount_of_previous == 1:
             if test_array[i].type == 'SUM':
                 test_array[i].send_data('term2', 1)
             elif test_array[i].type == 'MUL':
                 test_array[i].send_data('multiplier2', 3)
             else:
-                test_array[i].send_data('accuracy', 1.0001)
+                test_array[i].send_data('accuracy', 1.01)
     if settings["mode"] == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
         # print(test_array)
         print("Executing the graph...")
+        if settings["monitoring"] == 1:
+            start_time = time.time()  # начало отсчета времени для режима в порядке правильной нумерации
         for i in range(0, len(test_array) - 1):  # выполнение всех узлов, кроме Result
             test_array[i].do()
             if i % (round(len(test_array) / 10)) == 0:  # при выполнении замеров отключать вывод *
@@ -116,8 +120,12 @@ def test_graph():
         test_array[len(test_array) - 1].do()  # выполнение узла Result
     print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
+    if settings["monitoring"] == 1:
+        print("--- %s seconds ---" % (time.time() - start_time))
 
 
+# TODO: замеры времени выполнения и использования памяти для разных количеств узлов
+# TODO: скрипт для сбора результатов замеров
 if __name__ == "__main__":
     print("test_graph starts with mode = ", settings["mode"])
     test_graph()

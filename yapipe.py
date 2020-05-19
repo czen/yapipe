@@ -12,14 +12,17 @@ tar = []  # список для алгоритма Тарьяна
 # визуализация графа в файл test-output/TestGraph
 # для вызывается от списка узлов
 def get_visualization(nodes: list):
-    for i in range(0, len(nodes)):
-        dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
-    for i in range(0, len(nodes)):
-        if len(nodes[i].other) > 0:
-            for j in range(0, len(nodes[i].other)):
-                dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
-    print("Rendering...")
-    dot.render('test-output/TestGraph.gv', view=True)
+    if settings["rendering"] == 1:
+        for i in range(0, len(nodes)):
+            dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
+        for i in range(0, len(nodes)):
+            if len(nodes[i].other) > 0:
+                for j in range(0, len(nodes[i].other)):
+                    dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
+        print("Rendering...")
+        dot.render('test-output/TestGraph.gv', view=True)
+    else:
+        print("Rendering disabled in config.py")
 
 
 # правильная нумерация вершин графа и заполнение списка tar (вызывается после топологической сортировки)
@@ -31,7 +34,7 @@ def get_numeration():
         print("    ", tar[i].type, " - ", tar[i].number)
 
 
-# чтение из файла
+# чтение из файла и выполнение графа
 def file_reading():
     with open("in.txt") as f:
         if f:
@@ -294,11 +297,11 @@ if __name__ == "__main__":
                 'C1': (concat_node1, 'string2'),
                 'B2': (sum_node2, 'term2')}
     # соединение узлов в граф
-    #
-    #        sum2 -> concat -> res2 => ['30 yapipe is done!']
-    #       ↗      ↗
-    # sum1 -> mul -> concat1 -> res1 => ['2030']
-    #
+    """
+           sum2 -> concat -> res2 => ['30 yapipe is done!']
+          ↗      ↗
+    sum1 -> mul -> concat1 -> res1 => ['2030']
+    """
     sum_node1(mul_node.multiplier1)
     sum_node1(sum_node2.term1)
     mul_node(concat_node1.string1)
