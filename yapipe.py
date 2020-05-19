@@ -205,7 +205,7 @@ class CountAperi(Operation):  # вычисление числа ζ(3) (Пост�
     def __init__(self):
         super(CountAperi, self).__init__()
         self.type = 'COUNT_APERI'
-        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 1000
+        self._add_port('amount_of_terms')  # количеством суммируемых членов ряда будет значение этого поля * 100
         self._add_port('accuracy')  # точностью будет количество значащих знаков после запятой в этом поле
 
     def do(self):  # метод подсчета суммы обратных кубов
@@ -250,7 +250,7 @@ class CountE(Operation):  # вычисление числа e (число Эйл
         z = Decimal(str(self.get_data('accuracy')))
         z = z - int(z)
         val = Decimal(0)
-        n = round(self.get_data('amount_of_terms')) * 100
+        n = round(self.get_data('amount_of_terms')) * 10
         for i in range(0, n):
             fac = 1
             for j in range(2, i + 1):

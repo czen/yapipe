@@ -3,8 +3,21 @@
 from yapipe import *
 import random
 import time
+import os
+import psutil
+import csv
 
 
+# запись в csv файл (параметр data должен быть iterable)
+def csv_writer(data, path="output.csv"):
+    with open(path, "w", newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for i in range(0, len(data)):
+            data[i] = str(data[i]).split(',')
+            writer.writerow(data[i])
+
+
+# для работы фукции sorted по полю .number
 def byNumber_key(node):
     return node.number
 
@@ -12,8 +25,10 @@ def byNumber_key(node):
 def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
+    if settings["monitoring"] == 1:
+        monitoring_list = []
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    big_n = random.randint(100, 500)
+    big_n = random.randint(1000, 5000)
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -82,10 +97,11 @@ def test_graph():
             linked_to_result += 1
             # print("Node number ", test_array[i].number, "is linked with RESULT node")
     print(linked_to_result, " nodes are linked to RESULT node")
-    # визуализация графа
     get_visualization(test_array)
+    # начало отсчета времени и памяти для рекурсивного режима
     if settings["mode"] == 0 and settings["monitoring"] == 1:
-        start_time = time.time()  # начало отсчета времени для рекурсивного режима
+        start_time = time.time()
+        process = psutil.Process(os.getpid())
     # всем узлам, в которые входят 0 или 1 дуга, соответственно заполняем порты
     for i in range(0, len(test_array)):
         if test_array[i].amount_of_previous == 0:
@@ -105,15 +121,23 @@ def test_graph():
                 test_array[i].send_data('multiplier2', 3)
             else:
                 test_array[i].send_data('accuracy', 1.01)
+        # замер памяти
+        if settings["mode"] == 0 and settings["monitoring"] == 1:
+            mem = process.memory_info().rss / 1024 / 1024
+            monitoring_list.append(round(mem, 2))
     if settings["mode"] == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
         # print(test_array)
         print("Executing the graph...")
+        # начало отсчета времени для режима в порядке правильной нумерации
         if settings["monitoring"] == 1:
-            start_time = time.time()  # начало отсчета времени для режима в порядке правильной нумерации
+            start_time = time.time()
+            process = psutil.Process(os.getpid())
         for i in range(0, len(test_array) - 1):  # выполнение всех узлов, кроме Result
             test_array[i].do()
+            mem = process.memory_info().rss / 1024 / 1024
+            monitoring_list.append(round(mem, 2))
             if i % (round(len(test_array) / 10)) == 0:  # при выполнении замеров отключать вывод *
                 print(" * ", end="")
         print()
@@ -121,11 +145,12 @@ def test_graph():
     print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
     if settings["monitoring"] == 1:
-        print("--- %s seconds ---" % (time.time() - start_time))
+        t = round(time.time() - start_time, 2)
+        print("--- %s seconds ---" % t)
+        monitoring_list.append(t)
+        csv_writer(monitoring_list)
 
 
-# TODO: замеры времени выполнения и использования памяти для разных количеств узлов
-# TODO: скрипт для сбора результатов замеров
 if __name__ == "__main__":
     print("test_graph starts with mode = ", settings["mode"])
     test_graph()
