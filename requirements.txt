@@ -1,3 +1,2 @@
 jupyter
 graphviz~=0.14
-psutil~=5.7.0

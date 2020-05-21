@@ -3,14 +3,13 @@
 from yapipe import *
 import random
 import time
-import os
-import psutil
+import tracemalloc
 import csv
 
 
 # запись в csv файл (параметр data должен быть iterable)
 def csv_writer(data, path="output.csv"):
-    with open(path, "w", newline='') as csv_file:
+    with open(path, "a", newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for i in range(0, len(data)):
             data[i] = str(data[i]).split(',')
@@ -28,7 +27,8 @@ def test_graph():
     if settings["monitoring"] == 1:
         monitoring_list = []
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    big_n = random.randint(1000, 5000)
+    # big_n = random.randint(1000, 5000)
+    big_n = 2048
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -101,7 +101,7 @@ def test_graph():
     # начало отсчета времени и памяти для рекурсивного режима
     if settings["mode"] == 0 and settings["monitoring"] == 1:
         start_time = time.time()
-        process = psutil.Process(os.getpid())
+        tracemalloc.start()
     # всем узлам, в которые входят 0 или 1 дуга, соответственно заполняем порты
     for i in range(0, len(test_array)):
         if test_array[i].amount_of_previous == 0:
@@ -121,10 +121,6 @@ def test_graph():
                 test_array[i].send_data('multiplier2', 3)
             else:
                 test_array[i].send_data('accuracy', 1.01)
-        # замер памяти
-        if settings["mode"] == 0 and settings["monitoring"] == 1:
-            mem = process.memory_info().rss / 1024 / 1024
-            monitoring_list.append(round(mem, 2))
     if settings["mode"] == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
@@ -133,24 +129,35 @@ def test_graph():
         # начало отсчета времени для режима в порядке правильной нумерации
         if settings["monitoring"] == 1:
             start_time = time.time()
-            process = psutil.Process(os.getpid())
+            tracemalloc.start()
         for i in range(0, len(test_array) - 1):  # выполнение всех узлов, кроме Result
-            test_array[i].do()
-            mem = process.memory_info().rss / 1024 / 1024
-            monitoring_list.append(round(mem, 2))
-            if i % (round(len(test_array) / 10)) == 0:  # при выполнении замеров отключать вывод *
+            has_empty = False
+            for j in test_array[i].ports:
+                if len(test_array[i].ports[j]) == 0:
+                    has_empty = True
+            if not has_empty:
+                test_array[i].do()
+            if i % (round(len(test_array) / 10)) == 0:
                 print(" * ", end="")
-        print()
         test_array[len(test_array) - 1].do()  # выполнение узла Result
     print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
     if settings["monitoring"] == 1:
         t = round(time.time() - start_time, 2)
         print("--- %s seconds ---" % t)
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB ---")
+        monitoring_list.append(str(settings["mode"]))
         monitoring_list.append(t)
+        monitoring_list.append(peak / 10 ** 6)
+        monitoring_list.append("____")
         csv_writer(monitoring_list)
 
 
 if __name__ == "__main__":
-    print("test_graph starts with mode = ", settings["mode"])
-    test_graph()
+    for d in range(0, 20):
+        if d >= 10:
+            settings["mode"] = 1
+        print("test_graph starts with mode = ", settings["mode"])
+        test_graph()

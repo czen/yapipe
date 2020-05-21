@@ -5,13 +5,11 @@ from collections import deque
 from graphviz import Digraph
 from config import settings
 
-dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
-tar = []  # список для алгоритма Тарьяна
-
 
 # визуализация графа в файл test-output/TestGraph
 # для вызывается от списка узлов
 def get_visualization(nodes: list):
+    dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
     if settings["rendering"] == 1:
         for i in range(0, len(nodes)):
             dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
@@ -26,12 +24,12 @@ def get_visualization(nodes: list):
 
 
 # правильная нумерация вершин графа и заполнение списка tar (вызывается после топологической сортировки)
-def get_numeration():
+def get_numeration(nodes: list):
     tar.reverse()
     print("Correct graph numeration:")
     for i in range(0, len(tar)):
-        tar[i].number = i
-        print("    ", tar[i].type, " - ", tar[i].number)
+        nodes[i].number = i
+        print("    ", nodes[i].type, " - ", nodes[i].number)
 
 
 # чтение из файла и выполнение графа
@@ -68,7 +66,7 @@ class Operation(object):  # базовый класс
         self.amount_of_previous = 0  # количество предыдущих узлов
 
     # топологическая сортировка вершин (вызывается от первого узла)
-    def sort_nodes(self):
+    def sort_nodes(self, nodes: list):
         if self.color == 'black':
             pass
         elif self.color == 'gray':
@@ -77,12 +75,12 @@ class Operation(object):  # базовый класс
             self.color = 'gray'
             if len(self.other) != 0 and self.type != 'RESULT':
                 for i in range(0, len(self.other)):
-                    self.other[i].sort_nodes()
+                    self.other[i].sort_nodes(nodes)
                 self.color = 'black'
-                tar.append(self)
+                nodes.append(self)
             elif self.type == 'RESULT':
                 self.color = 'black'
-                tar.append(self)
+                nodes.append(self)
             elif self.other is None:
                 print("WARNING [in sort_nodes , node number ", self.number, "]: missing pointer to next node")
 
@@ -186,6 +184,7 @@ class Mul(Operation):  # умножение
         self.send_result(val)
 
 
+# классы - наследники
 class Concat(Operation):  # конкатенация
     def __init__(self):
         super(Concat, self).__init__()
@@ -283,6 +282,7 @@ class Result(Operation):  # завершение процесса
 
 if __name__ == "__main__":
     print("Yapipe starts with mode = ", settings["mode"])
+    tar = []  # список для алгоритма Тарьяна
     # описание узлов
     sum_node1 = Sum()
     sum_node2 = Sum()
@@ -310,9 +310,9 @@ if __name__ == "__main__":
     concat_node1(result_node1.conclusion)
     concat_node2(result_node2.conclusion)
     # топологическая сортировка
-    sum_node1.sort_nodes()
+    sum_node1.sort_nodes(tar)
     # составление правильной нумерации и заполнение списка tar
-    get_numeration()
+    get_numeration(tar)
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
     print("Must be: 30 yapipe is done!")
