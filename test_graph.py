@@ -9,8 +9,8 @@ import csv
 
 # запись в csv файл
 def csv_writer(data: list, path="output.csv"):
-    with open(path, "a", newline='') as csv_file:
-        writer = csv.writer(csv_file, delimiter=';')
+    with open(path, "w", newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter='\t')
         for i in range(0, len(data)):
             writer.writerow(data[i])
 
@@ -25,7 +25,7 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    big_n = 4096
+    big_n = 40
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -144,11 +144,13 @@ def test_graph():
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
         print("--- %s seconds ---" % t)
-        print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB ---")
-        monitoring_list = [[settings["mode"], str(t).replace('.', ','), str(peak / 10 ** 6).replace('.', ',')]]
+        print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 4}MB ---")
+        monitoring_list = [[settings["mode"], str(t).replace('.', ','), str(peak / 10 ** 4).replace('.', ',')]]
         csv_writer(monitoring_list)
 
 
+# TODO: нормально сделать csv
+# TODO: выводить графики средствами питона (отказ от экселя)
 if __name__ == "__main__":
     for d in range(0, 20):
         if d >= 10:

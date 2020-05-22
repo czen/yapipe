@@ -23,13 +23,45 @@ def get_visualization(nodes: list):
         print("Rendering disabled in config.py")
 
 
-# правильная нумерация вершин графа и заполнение списка tar (вызывается после топологической сортировки)
+# нумерует узлы в порядке следования в списке
 def get_numeration(nodes: list):
-    tar.reverse()
-    print("Correct graph numeration:")
-    for i in range(0, len(tar)):
+    nodes.reverse()
+    for i in range(0, len(nodes)):
         nodes[i].number = i
-        print("    ", nodes[i].type, " - ", nodes[i].number)
+
+
+# вывод правильной нумерации графа
+def print_numeration(nodes: list):
+    print("Correct graph numeration:")
+    for i in nodes:
+        print("    ", i.type, " - ", i.number)
+
+
+# рекурсивный обход узлов и присваивание номера яруса
+def set_layer(node, layer):
+    node.layer = layer
+    layer += 1
+    if len(node.otherPort) > 0:
+        for i in node.other:
+            set_layer(i, layer)
+
+
+# ярусно-параллельная форма графа
+def get_tier_parallel_form(nodes: list, layer=2):
+    print("Tire Parallel form:")
+    sources = []
+    # находим источники
+    for i in nodes:
+        if i.amount_of_previous == 0:
+            i.layer = 1
+            for j in i.other:
+                set_layer(j, layer)
+
+
+# вывод ярусно-параллельной формы графа
+def print_tier_parallel_form(nodes: list):
+    for i in nodes:
+        print("    ", i.type, " - ", i.layer)
 
 
 # чтение из файла и выполнение графа
@@ -64,8 +96,10 @@ class Operation(object):  # базовый класс
         self.color = 'white'  # "цвет" вершины (для поиска в глубину)
         self.number = -1  # Номер вершины
         self.amount_of_previous = 0  # количество предыдущих узлов
+        self.layer = -1
 
-    # топологическая сортировка вершин (вызывается от первого узла)
+    # топологическая сортировка вершин (вызывается от первого узла), заполняет список узлами
+    # в порядке правильной нумерации графа
     def sort_nodes(self, nodes: list):
         if self.color == 'black':
             pass
@@ -283,7 +317,6 @@ class Result(Operation):  # завершение процесса
 if __name__ == "__main__":
     print("Yapipe starts with mode = ", settings["mode"])
     tar = []  # список для алгоритма Тарьяна
-    # описание узлов
     sum_node1 = Sum()
     sum_node2 = Sum()
     mul_node = Mul()
@@ -296,7 +329,7 @@ if __name__ == "__main__":
                 'M': (mul_node, 'multiplier2'),
                 'C1': (concat_node1, 'string2'),
                 'B2': (sum_node2, 'term2')}
-    # соединение узлов в граф
+    # соединение узлов в граф:
     """
            sum2 -> concat -> res2 => ['30 yapipe is done!']
           ↗      ↗
@@ -309,10 +342,11 @@ if __name__ == "__main__":
     sum_node2(concat_node2.string1)
     concat_node1(result_node1.conclusion)
     concat_node2(result_node2.conclusion)
-    # топологическая сортировка
     sum_node1.sort_nodes(tar)
-    # составление правильной нумерации и заполнение списка tar
     get_numeration(tar)
+    print_numeration(tar)
+    get_tier_parallel_form(tar)
+    print_tier_parallel_form(tar)
     # чтение данных из файла в порты узлов и выполнение do()
     file_reading()
     print("Must be: 30 yapipe is done!")
