@@ -49,7 +49,6 @@ def set_layer(node, layer):
 # ярусно-параллельная форма графа
 def get_tier_parallel_form(nodes: list, layer=2):
     print("Tire Parallel form:")
-    sources = []
     # находим источники
     for i in nodes:
         if i.amount_of_previous == 0:
