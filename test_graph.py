@@ -12,8 +12,7 @@ def csv_writer(data, path="output.csv"):
     with open(path, "a", newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
         for i in range(0, len(data)):
-            data[i] = str(data[i]).split(',')
-            writer.writerow(data[i])
+            writer.writerows(data[i])
 
 
 # для работы фукции sorted по полю .number
@@ -22,13 +21,11 @@ def byNumber_key(node):
 
 
 def test_graph():
+    random.seed(2031)
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
-    if settings["monitoring"] == 1:
-        monitoring_list = []
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    # big_n = random.randint(1000, 5000)
-    big_n = 2048
+    big_n = 4096
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -144,14 +141,18 @@ def test_graph():
     print("Test_graph completed!")
     if settings["monitoring"] == 1:
         t = round(time.time() - start_time, 2)
-        print("--- %s seconds ---" % t)
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
+        print("--- %s seconds ---" % t)
         print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB ---")
-        monitoring_list.append(str(settings["mode"]))
-        monitoring_list.append(t)
-        monitoring_list.append(peak / 10 ** 6)
-        monitoring_list.append("____")
+        monitoring_list = []
+        mode_list = []
+        time_list = []
+        mem_list = []
+        mode_list.append(str(settings["mode"]))
+        time_list.append(t)
+        mem_list.append(peak / 10 ** 6)
+        monitoring_list.append([mode_list, time_list, mem_list])
         csv_writer(monitoring_list)
 
 
