@@ -7,12 +7,12 @@ import tracemalloc
 import csv
 
 
-# запись в csv файл (параметр data должен быть iterable)
-def csv_writer(data, path="output.csv"):
+# запись в csv файл
+def csv_writer(data: list, path="output.csv"):
     with open(path, "a", newline='') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',')
+        writer = csv.writer(csv_file, delimiter=';')
         for i in range(0, len(data)):
-            writer.writerows(data[i])
+            writer.writerow(data[i])
 
 
 # для работы фукции sorted по полю .number
@@ -145,14 +145,7 @@ def test_graph():
         tracemalloc.stop()
         print("--- %s seconds ---" % t)
         print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 6}MB ---")
-        monitoring_list = []
-        mode_list = []
-        time_list = []
-        mem_list = []
-        mode_list.append(str(settings["mode"]))
-        time_list.append(t)
-        mem_list.append(peak / 10 ** 6)
-        monitoring_list.append([mode_list, time_list, mem_list])
+        monitoring_list = [[settings["mode"], str(t).replace('.', ','), str(peak / 10 ** 6).replace('.', ',')]]
         csv_writer(monitoring_list)
 
 
