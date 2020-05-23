@@ -135,7 +135,7 @@ class Operation(object):  # базовый класс
             self.ports[portname].append(value)
         else:
             print("ERROR [in send_data, node number ", self.number, "]: no port with the name: ", portname)
-        if settings["mode"] == 0:
+        if settings["mode"] == 0 or settings["mode"] == 2:
             # попытка выполнить do для рекурсивного режима работы
             has_empty = False
             for i in self.ports:
@@ -300,7 +300,7 @@ class Result(Operation):  # завершение процесса
 
     def do(self):  # метод вывода результата
         if len(self.ports['conclusion']) != 0:
-            if settings["mode"] == 0:
+            if settings["mode"] == 0 or settings["mode"] == 2:
                 self.count += 1
                 print("CONCLUSION ", self.count, "at node number ", self.number, " = ",
                       self.ports['conclusion'].pop())
