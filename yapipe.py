@@ -6,6 +6,9 @@ from graphviz import Digraph
 from config import settings
 
 
+gl = []
+
+
 # визуализация графа в файл test-output/TestGraph
 # для вызывается от списка узлов
 def get_visualization(nodes: list):
@@ -301,13 +304,17 @@ class Result(Operation):  # завершение процесса
         if len(self.ports['conclusion']) != 0:
             if settings["mode"] == 0 or settings["mode"] == 2:
                 self.count += 1
+                res = self.ports['conclusion'].pop()
+                gl.append(res)
                 print("CONCLUSION ", self.count, "at node number ", self.number, " = ",
-                      self.ports['conclusion'].pop())
+                      res)
             elif settings["mode"] == 1:
                 for i in range(0, len(self.ports['conclusion'])):
                     self.count += 1
+                    res = self.ports['conclusion'].popleft()
+                    gl.append(res)
                     print("CONCLUSION ", self.count, " at node number ", self.number, " = ",
-                          self.ports['conclusion'].popleft())
+                          res)
         else:
             print("CONCLUSION at node number ", self.number, " is empty")
 

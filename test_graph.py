@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # запись в csv файл
 def csv_writer(data: list, path="output.csv"):
-    with open(path, "w", newline='') as csv_file:
+    with open(path, "a", newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter='\t')
         for i in range(0, len(data)):
             writer.writerow(data[i])
@@ -27,7 +27,7 @@ def test_graph():
     print("Starting test_graph...")
     test_array = []  # список с узлами тестового графа
     # заполнение списка узлами случайного типа и нумерация этих узлов
-    big_n = 40
+    big_n = 96
     for i in range(0, big_n):
         z = random.randint(0, 4)
         if z == 0:
@@ -171,23 +171,34 @@ def test_graph():
     print("RESULT do ", test_array[len(test_array) - 1].count, " of ", linked_to_result, "linked to it")
     print("Test_graph completed!")
     if settings["monitoring"] == 1:
-        t = round(time.time() - start_time, 2)
+        t = str(round(time.time() - start_time, 2))
+        if len(t) < 4:  # для правильной записи в CSV файл
+            t += '0'
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
         print("--- %s seconds ---" % t)
         print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 4}MB ---")
-        monitoring_list = [[settings["mode"], str(t).replace('.', ','), str(peak / 10 ** 4).replace('.', ',')]]
+        monitoring_list = [[settings["mode"], t, str(peak / 10 ** 4)]]
         csv_writer(monitoring_list)
 
 
-# TODO: нормально сделать csv
-# TODO: выводить графики средствами питона (отказ от экселя)
+# TODO: выводить графики средствами питона
 if __name__ == "__main__":
-    settings["mode"] = 2
+    all_results = []
     for d in range(0, 30):
-        if d >= 20:
-            settings["mode"] = 1
         if d >= 10:
+            settings["mode"] = 1
+        if d >= 20:
             settings["mode"] = 0        
         print("test_graph starts with mode = ", settings["mode"])
         test_graph()
+        all_results.append(gl)
+    # проверка совпадения результатов
+    eq = True
+    for i in range(1, len(all_results)):
+        if all_results[0] != all_results[i]:
+            eq = False
+        if not eq:
+            print("!!!ERROR!!!")
+            break
+    print("Results for all modes are equal: ", eq)
