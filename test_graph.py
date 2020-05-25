@@ -5,6 +5,8 @@ import random
 import time
 import tracemalloc
 import csv
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 
 # запись в csv файл
@@ -96,28 +98,57 @@ def test_graph():
     print(linked_to_result, " nodes are linked to RESULT node")
     get_visualization(test_array)
     # начало отсчета времени и памяти для рекурсивного режима
-    if settings["mode"] == 0 and settings["monitoring"] == 1:
+    if (settings["mode"] == 0 or settings["mode"] == 2) and settings["monitoring"] == 1:
         start_time = time.time()
         tracemalloc.start()
     # всем узлам, в которые входят 0 или 1 дуга, соответственно заполняем порты
-    for i in range(0, len(test_array)):
-        if test_array[i].amount_of_previous == 0:
-            if test_array[i].type == 'SUM':
-                test_array[i].send_data('term1', 2)
-                test_array[i].send_data('term2', 2)
-            elif test_array[i].type == 'MUL':
-                test_array[i].send_data('multiplier1', 2)
-                test_array[i].send_data('multiplier2', 2)
-            else:
-                test_array[i].send_data('amount_of_terms', 2)
-                test_array[i].send_data('accuracy', 1.01)
-        elif test_array[i].amount_of_previous == 1:
-            if test_array[i].type == 'SUM':
-                test_array[i].send_data('term2', 1)
-            elif test_array[i].type == 'MUL':
-                test_array[i].send_data('multiplier2', 3)
-            else:
-                test_array[i].send_data('accuracy', 1.01)
+    if settings["mode"] == 2:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            def send_async(i, name, value):
+                return executor.submit(test_array[i].send_data, name, value)
+
+            pending_tasks = []
+            
+            for i in range(0, len(test_array)):
+                if test_array[i].amount_of_previous == 0:
+                    if test_array[i].type == 'SUM':
+                        pending_tasks.append(send_async(i, 'term1', 2))
+                        pending_tasks.append(send_async(i, 'term2', 2))
+                    elif test_array[i].type == 'MUL':
+                        pending_tasks.append(send_async(i, 'multiplier1', 2))
+                        pending_tasks.append(send_async(i, 'multiplier2', 2))
+                    else:
+                        pending_tasks.append(send_async(i, 'amount_of_terms', 2))
+                        pending_tasks.append(send_async(i, 'accuracy', 1.01))
+                elif test_array[i].amount_of_previous == 1:
+                    if test_array[i].type == 'SUM':
+                        pending_tasks.append(send_async(i, 'term2', 1))
+                    elif test_array[i].type == 'MUL':
+                        pending_tasks.append(send_async(i, 'multiplier2', 3))
+                    else:
+                        pending_tasks.append(send_async(i, 'accuracy', 1.01))
+
+            for t in pending_tasks:
+                r = t.result()
+    else:
+        for i in range(0, len(test_array)):
+            if test_array[i].amount_of_previous == 0:
+                if test_array[i].type == 'SUM':
+                    test_array[i].send_data('term1', 2)
+                    test_array[i].send_data('term2', 2)
+                elif test_array[i].type == 'MUL':
+                    test_array[i].send_data('multiplier1', 2)
+                    test_array[i].send_data('multiplier2', 2)
+                else:
+                    test_array[i].send_data('amount_of_terms', 2)
+                    test_array[i].send_data('accuracy', 1.01)
+            elif test_array[i].amount_of_previous == 1:
+                if test_array[i].type == 'SUM':
+                    test_array[i].send_data('term2', 1)
+                elif test_array[i].type == 'MUL':
+                    test_array[i].send_data('multiplier2', 3)
+                else:
+                    test_array[i].send_data('accuracy', 1.01)
     if settings["mode"] == 1:
         test_array = sorted(test_array, key=byNumber_key)
         # print("test_array sorted:")
@@ -152,8 +183,11 @@ def test_graph():
 # TODO: нормально сделать csv
 # TODO: выводить графики средствами питона (отказ от экселя)
 if __name__ == "__main__":
-    for d in range(0, 20):
-        if d >= 10:
+    settings["mode"] = 2
+    for d in range(0, 30):
+        if d >= 20:
             settings["mode"] = 1
+        if d >= 10:
+            settings["mode"] = 0        
         print("test_graph starts with mode = ", settings["mode"])
         test_graph()
