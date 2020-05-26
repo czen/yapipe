@@ -42,8 +42,9 @@ def print_numeration(nodes: list):
 
 # рекурсивный обход узлов и присваивание номера яруса
 def set_layer(node, layer):
-    node.layer = layer
-    layer += 1
+    if node.layer < layer:
+        node.layer = layer
+        layer += 1
     if len(node.otherPort) > 0:
         for i in node.other:
             set_layer(i, layer)
@@ -189,6 +190,7 @@ class Operation(object):  # базовый класс
             return "ERROR [in __call__ ", self.number, "]: argument is not a subclass of Operation"
 
 
+# классы - наследники
 class Sum(Operation):  # сумма
     def __init__(self):
         super(Sum, self).__init__()
@@ -219,7 +221,6 @@ class Mul(Operation):  # умножение
         self.send_result(val)
 
 
-# классы - наследники
 class Concat(Operation):  # конкатенация
     def __init__(self):
         super(Concat, self).__init__()
@@ -306,15 +307,13 @@ class Result(Operation):  # завершение процесса
                 self.count += 1
                 res = self.ports['conclusion'].pop()
                 gl.append(res)
-                print("CONCLUSION ", self.count, "at node number ", self.number, " = ",
-                      res)
+                print("CONCLUSION ", self.count, "at node number ", self.number, " = ", res)
             elif settings["mode"] == 1:
                 for i in range(0, len(self.ports['conclusion'])):
                     self.count += 1
                     res = self.ports['conclusion'].popleft()
                     gl.append(res)
-                    print("CONCLUSION ", self.count, " at node number ", self.number, " = ",
-                          res)
+                    print("CONCLUSION ", self.count, " at node number ", self.number, " = ", res)
         else:
             print("CONCLUSION at node number ", self.number, " is empty")
 
