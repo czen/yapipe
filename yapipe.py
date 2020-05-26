@@ -6,87 +6,7 @@ from graphviz import Digraph
 from config import settings
 
 
-gl = []
-
-
-# визуализация графа в файл test-output/TestGraph
-# для вызывается от списка узлов
-def get_visualization(nodes: list):
-    dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
-    if settings["rendering"] == 1:
-        for i in range(0, len(nodes)):
-            dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
-        for i in range(0, len(nodes)):
-            if len(nodes[i].other) > 0:
-                for j in range(0, len(nodes[i].other)):
-                    dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
-        print("Rendering...")
-        dot.render('test-output/TestGraph.gv', view=True)
-    else:
-        print("Rendering disabled in config.py")
-
-
-# нумерует узлы в порядке следования в списке
-def get_numeration(nodes: list):
-    nodes.reverse()
-    for i in range(0, len(nodes)):
-        nodes[i].number = i
-
-
-# вывод правильной нумерации графа
-def print_numeration(nodes: list):
-    print("Correct graph numeration:")
-    for i in nodes:
-        print("    ", i.type, " - ", i.number)
-
-
-# рекурсивный обход узлов и присваивание номера яруса
-def set_layer(node, layer):
-    if node.layer < layer:
-        node.layer = layer
-        layer += 1
-    if len(node.otherPort) > 0:
-        for i in node.other:
-            set_layer(i, layer)
-
-
-# ярусно-параллельная форма графа
-def get_tier_parallel_form(nodes: list, layer=2):
-    for i in nodes:
-        if i.amount_of_previous == 0:
-            i.layer = 1
-            for j in i.other:
-                set_layer(j, layer)
-
-
-# вывод ярусно-параллельной формы графа
-def print_tier_parallel_form(nodes: list):
-    print("Tire Parallel form:")
-    for i in nodes:
-        print("    ", i.type, " - ", i.layer)
-
-
-# чтение из файла и выполнение графа
-def file_reading():
-    with open("in.txt") as f:
-        if f:
-            print("Reading file...")
-            for line in f:
-                line = line.split('=')
-                if line[0] in port_map:
-                    if len(port_map[line[0]][0].other) != 0:
-                        port_map[line[0]][0].send_data(port_map[line[0]][1], line[1][0:-1])
-                        if settings["mode"] == 1:
-                            # попытка выполнить do для режима работы в порядке правильной нумерации
-                            for i in range(0, len(tar)):
-                                has_empty = False
-                                for j in tar[i].ports:
-                                    if len(tar[i].ports[j]) == 0:
-                                        has_empty = True
-                                if not has_empty:
-                                    tar[i].do()
-        else:
-            print("ERROR [in file_reading]: file error !")
+gl = []  # для проверки результатов выполнения тестовых запусков
 
 
 class Operation(object):  # базовый класс
@@ -308,7 +228,7 @@ class Result(Operation):  # завершение процесса
                 res = self.ports['conclusion'].pop()
                 gl.append(res)
                 print("CONCLUSION ", self.count, "at node number ", self.number, " = ", res)
-            elif settings["mode"] == 1:
+            elif settings["mode"] == 1 or settings["mode"] == 3:
                 for i in range(0, len(self.ports['conclusion'])):
                     self.count += 1
                     res = self.ports['conclusion'].popleft()
@@ -316,6 +236,104 @@ class Result(Operation):  # завершение процесса
                     print("CONCLUSION ", self.count, " at node number ", self.number, " = ", res)
         else:
             print("CONCLUSION at node number ", self.number, " is empty")
+
+
+# визуализация графа в файл test-output/TestGraph
+# для вызывается от списка узлов
+def get_visualization(nodes: list):
+    dot = Digraph(comment='Test graph')  # для визуализации с помощью graphviz
+    if settings["rendering"] == 1:
+        for i in range(0, len(nodes)):
+            dot.node(str(nodes[i].number), nodes[i].type + ' ' + str(nodes[i].number))
+        for i in range(0, len(nodes)):
+            if len(nodes[i].other) > 0:
+                for j in range(0, len(nodes[i].other)):
+                    dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
+        print("Rendering...")
+        dot.render('test-output/TestGraph.gv', view=True)
+    else:
+        print("Rendering disabled in config.py")
+
+
+# нумерует узлы в порядке следования в списке
+def get_numeration(nodes: list):
+    nodes.reverse()
+    for i in range(0, len(nodes)):
+        nodes[i].number = i
+
+
+# вывод правильной нумерации графа
+def print_numeration(nodes: list):
+    print("Correct graph numeration:")
+    for i in nodes:
+        print("    ", i.type, " - ", i.number)
+
+
+# попытка выполнить do для режима работы в порядке правильной нумерации
+def try_do(node: Operation):
+    has_empty = False
+    for p in node.ports:
+        if len(node.ports[p]) == 0:
+            has_empty = True
+    if not has_empty:
+        node.do()
+
+
+# рекурсивный обход узлов и присваивание номера яруса
+def set_layer(node: Operation, layer):
+    if node.layer < layer:
+        node.layer = layer
+        layer += 1
+    if len(node.otherPort) > 0:
+        for i in node.other:
+            set_layer(i, layer)
+
+
+# ярусно-параллельная форма графа
+def get_tier_parallel_form(nodes: list, layer=2):
+    for i in nodes:
+        if i.amount_of_previous == 0:
+            i.layer = 1
+            for j in i.other:
+                set_layer(j, layer)
+
+
+# вывод ярусно-параллельной формы графа
+def print_tier_parallel_form(nodes: list):
+    print("Tire Parallel form:")
+    for i in nodes:
+        print("    ", i.type, " - ", i.layer)
+
+
+def process_tier_parallel_form(nodes: list):
+    max_layer = 0
+    for i in nodes:
+        if i.layer > max_layer:
+            max_layer = i.layer
+    for j in range(1, max_layer + 1):
+        for i in nodes:
+            if i.layer == j:
+                try_do(i)
+
+
+# чтение данных из файла в порты узлов и выполнение графа
+def file_reading(nodes: list, datamap: {}):
+    with open("in.txt") as f:
+        if f:
+            print("Reading file...")
+            for line in f:
+                line = line.split('=')
+                if line[0] in datamap:
+                    if len(datamap[line[0]][0].other) != 0:
+                        datamap[line[0]][0].send_data(datamap[line[0]][1], line[1][0:-1])
+            print("End of file")
+            if settings["mode"] == 1:
+                for i in nodes:
+                    try_do(i)
+            if settings["mode"] == 3:
+                process_tier_parallel_form(nodes)
+        else:
+            print("ERROR [in file_reading]: file error !")
 
 
 if __name__ == "__main__":
@@ -351,8 +369,7 @@ if __name__ == "__main__":
     print_numeration(tar)
     get_tier_parallel_form(tar)
     print_tier_parallel_form(tar)
-    # чтение данных из файла в порты узлов и выполнение do()
-    file_reading()
-    print("Must be: 30 yapipe is done!")
-    print("         2030")
+    file_reading(tar, port_map)
+    print("Must be: CONCLUSION  1  at node number  6  =  30 yapipe is done!")
+    print("         CONCLUSION  1  at node number  4  = 2030")
     print()
