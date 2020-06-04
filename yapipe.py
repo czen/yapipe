@@ -4,7 +4,7 @@ from decimal import *
 from collections import deque
 from graphviz import Digraph
 from config import settings
-
+from concurrent.futures import ThreadPoolExecutor
 
 gl = []  # для проверки результатов выполнения тестовых запусков
 
@@ -310,10 +310,22 @@ def process_tier_parallel_form(nodes: list):
     for i in nodes:
         if i.layer > max_layer:
             max_layer = i.layer
-    for j in range(1, max_layer + 1):
-        for i in nodes:
-            if i.layer == j:
-                try_do(i)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        def do_async(node):
+            return executor.submit(node.do)
+
+        pending_tasks = []
+        for j in range(1, max_layer + 1):
+            for i in nodes:
+                if i.layer == j:
+                    has_empty = False
+                    for p in i.ports:
+                        if len(i.ports[p]) == 0:
+                            has_empty = True
+                    if not has_empty:
+                        pending_tasks.append(do_async(i))
+        for task in pending_tasks:
+            res = task.result()
 
 
 # чтение данных из файла в порты узлов и выполнение графа
@@ -326,11 +338,11 @@ def file_reading(nodes: list, datamap: {}):
                 if line[0] in datamap:
                     if len(datamap[line[0]][0].other) != 0:
                         datamap[line[0]][0].send_data(datamap[line[0]][1], line[1][0:-1])
-            print("End of file")
+            print("File is read")
             if settings["mode"] == 1:
                 for i in nodes:
                     try_do(i)
-            if settings["mode"] == 3:
+            elif settings["mode"] == 3:
                 process_tier_parallel_form(nodes)
         else:
             print("ERROR [in file_reading]: file error !")
@@ -370,6 +382,6 @@ if __name__ == "__main__":
     get_tier_parallel_form(tar)
     print_tier_parallel_form(tar)
     file_reading(tar, port_map)
-    print("Must be: CONCLUSION  1  at node number  6  =  30 yapipe is done!")
-    print("         CONCLUSION  1  at node number  4  = 2030")
     print()
+    print("     Must be: CONCLUSION  1  at node number  6  =  30 yapipe is done!")
+    print("              CONCLUSION  1  at node number  4  = 2030")
