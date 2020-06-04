@@ -120,9 +120,9 @@ class Sum(Operation):  # сумма
 
     def do(self):  # метод суммы
         val = Decimal(self.get_data('term1')) + Decimal(self.get_data('term2'))
-        print("SUM node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other)):
-           print("     and val is sent to node number ", self.other[i].number)
+        # print("SUM node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other)):
+        #    print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -135,9 +135,9 @@ class Mul(Operation):  # умножение
 
     def do(self):  # метод умножения
         val = Decimal(self.get_data('multiplier1')) * Decimal(self.get_data('multiplier2'))
-        print("MUL node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other)):
-            print("     and val is sent to node number ", self.other[i].number)
+        # print("MUL node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other)):
+        #     print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -150,9 +150,9 @@ class Concat(Operation):  # конкатенация
 
     def do(self):  # метод конкатенации
         val = str(self.get_data('string1')) + str(self.get_data('string2'))
-        print("CONCAT node number ", self.number, " done with val = ", val)
-        for i in range(0, len(self.other)):
-            print("     and val is sent to node number ", self.other[i].number)
+        # print("CONCAT node number ", self.number, " done with val = ", val)
+        # for i in range(0, len(self.other)):
+        #     print("     and val is sent to node number ", self.other[i].number)
         self.send_result(val)
 
 
@@ -310,13 +310,12 @@ def process_tier_parallel_form(nodes: list):
     for i in nodes:
         if i.layer > max_layer:
             max_layer = i.layer
-    print("max_layer = ", max_layer)
     with ThreadPoolExecutor(max_workers=4) as executor:
         def do_async(node):
             return executor.submit(node.do)
 
-        pending_tasks = []
         for j in range(1, max_layer + 1):
+            pending_tasks = []
             for i in nodes:
                 if i.layer == j:
                     has_empty = False
@@ -325,8 +324,8 @@ def process_tier_parallel_form(nodes: list):
                             has_empty = True
                     if not has_empty:
                         pending_tasks.append(do_async(i))
-        for task in pending_tasks:
-            res = task.result()
+            for task in pending_tasks:
+                res = task.result()
 
 
 # чтение данных из файла в порты узлов и выполнение графа

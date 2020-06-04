@@ -5,12 +5,12 @@ import random
 import time
 import tracemalloc
 import csv
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 
 
 # запись в csv файл
 def csv_writer(data: list, path="output.csv"):
-    with open(path, "w", newline='') as csv_file:
+    with open(path, "a", newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter='\t')
         for i in range(0, len(data)):
             writer.writerow(data[i])
@@ -91,7 +91,7 @@ def test_graph():
 
     get_visualization(test_array)
 
-    # начало отсчета времени и памяти для рекурсивного режима
+    # начало отсчета времени и памяти для рекурсивных режимов
     if (settings["mode"] == 0 or settings["mode"] == 2) and settings["monitoring"] == 1:
         start_time = time.time()
         tracemalloc.start()
@@ -103,7 +103,6 @@ def test_graph():
                 return executor.submit(test_array[i].send_data, name, value)
 
             pending_tasks = []
-            
             for i in range(0, len(test_array)):
                 if test_array[i].amount_of_previous == 0:
                     if test_array[i].type == 'SUM':
@@ -122,7 +121,6 @@ def test_graph():
                         pending_tasks.append(send_async(i, 'multiplier2', 3))
                     else:
                         pending_tasks.append(send_async(i, 'accuracy', 1.01))
-
             for t in pending_tasks:
                 r = t.result()
     else:
@@ -175,11 +173,10 @@ def test_graph():
         tracemalloc.stop()
         print("--- %s seconds ---" % t)
         print(f"--- Current memory usage is {current / 10 ** 6}MB; Peak was {peak / 10 ** 4}MB ---")
-        monitoring_list = [[settings["mode"], t, str(peak / 10 ** 4)]]
+        monitoring_list = [[settings["mode"], t.replace('.', ','), str(peak / 10 ** 4).replace('.', ',')]]
         csv_writer(monitoring_list)
 
 
-# TODO: выводить графики средствами питона
 if __name__ == "__main__":
     all_results = []
     for d in range(0, 40):
@@ -200,4 +197,5 @@ if __name__ == "__main__":
         if not eq:
             print("!!!ERROR!!!")
             break
+    print()
     print("Results for all modes are equal: ", eq)
