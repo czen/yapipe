@@ -305,6 +305,7 @@ def print_tier_parallel_form(nodes: list):
         print("    ", i.type, " - ", i.layer)
 
 
+# выполнение узлов на одном ярусе асинхронно
 def process_tier_parallel_form(nodes: list):
     max_layer = 0
     for i in nodes:
