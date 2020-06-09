@@ -231,7 +231,7 @@ class Result(Operation):  # завершение процесса
             elif settings["mode"] == 1 or settings["mode"] == 3:
                 for i in range(0, len(self.ports['conclusion'])):
                     self.count += 1
-                    res = self.ports['conclusion'].popleft()
+                    res = self.ports['conclusion'].pop()
                     gl.append(res)
                     print("CONCLUSION ", self.count, " at node number ", self.number, " = ", res)
         else:
@@ -250,7 +250,7 @@ def get_visualization(nodes: list):
                 for j in range(0, len(nodes[i].other)):
                     dot.edge(str(nodes[i].number), str(nodes[i].other[j].number))
         print("Rendering...")
-        dot.render('test-output/TestGraph.gv', view=True)
+        dot.render('test-output/TestSmallGraph.gv', view=True)
     else:
         print("Rendering disabled in config.py")
 
@@ -271,12 +271,13 @@ def print_numeration(nodes: list):
 
 # попытка выполнить do для режима работы в порядке правильной нумерации
 def try_do(node: Operation):
-    has_empty = False
-    for p in node.ports:
-        if len(node.ports[p]) == 0:
-            has_empty = True
-    if not has_empty:
-        node.do()
+    for t in range(0, len(list(node.ports.keys())[0])):
+        has_empty = False
+        for p in node.ports:
+            if len(node.ports[p]) == 0:
+                has_empty = True
+        if not has_empty:
+            node.do()
 
 
 # рекурсивный обход узлов и присваивание номера яруса
@@ -319,12 +320,13 @@ def process_tier_parallel_form(nodes: list):
             pending_tasks = []
             for i in nodes:
                 if i.layer == j:
-                    has_empty = False
-                    for p in i.ports:
-                        if len(i.ports[p]) == 0:
-                            has_empty = True
-                    if not has_empty:
-                        pending_tasks.append(do_async(i))
+                    # for t in range(0, len(list(i.ports.keys())[0])):
+                        has_empty = False
+                        for p in i.ports:
+                            if len(i.ports[p]) == 0:
+                                has_empty = True
+                        if not has_empty:
+                            pending_tasks.append(do_async(i))
             for task in pending_tasks:
                 res = task.result()
 
